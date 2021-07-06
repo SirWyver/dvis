@@ -13,7 +13,7 @@ var ShortCutTable = [
   { key: "e", descr: "Rotate" },
   { key: "r", descr: "Scale" },
   { key: "z", descr: "Undo" },
-  { key: "z", descr: "Undo" },
+  { key: "f", descr: "Focus" },
 
 
   { key: "t", descr: "Switch camera" },

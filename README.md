@@ -39,4 +39,26 @@ python examples/point_clouds.py
 ...
 ```
 
+## Shotcuts
+| Shortcut | Description               |
+|----------|---------------------------|
+|  **Editor**  |                           |
+| w        | Translate                 |
+| e        | Rotate                 |
+| r        | Scale                 |
+| z        | Undo                 |
+| f        | Focus                 |
+|  **DVIS**  |                           |
+| v        | Show/hide selected object |
+| 0-5      | Toggle layer 0-5          |
+| Shift + 0-5      | Show layer 0-5 add.          |
+| g     | Show/hide grid & axes helper          |
+| n      | Next keyframe          |
+| b      | Previous keyframe          |
+| .      | Next frame          |
+| ,      | Previous frame          |
+| t      | Switch camera          |
+| [      | Download screenshot         |
+
+
 
