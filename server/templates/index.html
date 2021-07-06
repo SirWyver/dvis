@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>DVis Editor</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="apple-touch-icon" href="images/icon.png">
+	<link rel="manifest" href="manifest.json">
+	<link rel="shortcut icon" href="favicon_D.ico" />
+
+</head>
+
+<body>
+	<link rel="stylesheet" href="css/main.css">
+
+	<script src="../examples/js/libs/jszip.min.js"></script>
+	<script src="../examples/js/libs/draco/draco_encoder.js"></script>
+
+	<link rel="stylesheet" href="js/libs/codemirror/codemirror.css">
+	<link rel="stylesheet" href="js/libs/codemirror/theme/monokai.css">
+	<script src="js/libs/codemirror/codemirror.js"></script>
+	<script src="js/libs/codemirror/mode/javascript.js"></script>
+	<script src="js/libs/codemirror/mode/glsl.js"></script>
+
+	<script src="js/libs/esprima.js"></script>
+	<script src="js/libs/jsonlint.js"></script>
+	<script src="js/libs/glslprep.min.js"></script>
+
+	<link rel="stylesheet" href="js/libs/codemirror/addon/dialog.css">
+	<link rel="stylesheet" href="js/libs/codemirror/addon/show-hint.css">
+	<link rel="stylesheet" href="js/libs/codemirror/addon/tern.css">
+
+	<script src="js/libs/codemirror/addon/dialog.js"></script>
+	<script src="js/libs/codemirror/addon/show-hint.js"></script>
+	<script src="js/libs/codemirror/addon/tern.js"></script>
+	<script src="js/libs/acorn/acorn.js"></script>
+	<script src="js/libs/acorn/acorn_loose.js"></script>
+	<script src="js/libs/acorn/walk.js"></script>
+	<script src="js/libs/ternjs/polyfill.js"></script>
+	<script src="js/libs/ternjs/signal.js"></script>
+	<script src="js/libs/ternjs/tern.js"></script>
+	<script src="js/libs/ternjs/def.js"></script>
+	<script src="js/libs/ternjs/comment.js"></script>
+	<script src="js/libs/ternjs/infer.js"></script>
+	<script src="js/libs/ternjs/doc_comment.js"></script>
+	<script src="js/libs/tern-threejs/threejs.js"></script>
+	<script src="js/libs/signals.min.js"></script>
+
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+	<!--
+	<script src="js/CanvasNest.js" opacity="0.8" color="255,68,255" zindex="1"></script>
+	-->
+	<dialog id="ShortCutsDialog">
+	</dialog>
+
+	<script type="module">
+
+
+
+		import * as THREE from '../build/three.module.js';
+		import { Editor } from './js/Editor.js';
+		import { Viewport } from './js/Viewport.js';
+		import { Toolbar } from './js/Toolbar.js';
+		import { Script } from './js/Script.js';
+		import { Player } from './js/Player.js';
+		import { Sidebar } from './js/Sidebar.js';
+		import { Menubar } from './js/Menubar.js';
+		import { DVisAdd, DVisAddMesh, DVisAddPayload, DVisLoad, DVisClear, DVisAddCamera, DVisCmd, DVisAddCameraImage } from './js/DVis.js';
+		import { Animator } from './js/Animator.js';
+		import { Timeline } from './js/Timeline.js';
+
+
+		window.URL = window.URL || window.webkitURL;
+		window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder;
+
+		Number.prototype.format = function () {
+
+			return this.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
+
+		};
+
+		//
+
+		var editor = new Editor();
+		editor.ci = DVisAddCameraImage;
+
+		window.editor = editor; // Expose editor to Console
+		window.THREE = THREE; // Expose THREE to APP Scripts and Console
+		editor.config.port = '{{ port }}';
+		console.log(editor.config.port);
+		var viewport = new Viewport(editor);
+		document.body.appendChild(viewport.dom);
+
+		var toolbar = new Toolbar(editor);
+		document.body.appendChild(toolbar.dom);
+
+		var script = new Script(editor);
+		document.body.appendChild(script.dom);
+
+		var player = new Player(editor);
+		document.body.appendChild(player.dom);
+
+		var sidebar = new Sidebar(editor);
+		document.body.appendChild(sidebar.dom);
+
+		var menubar = new Menubar(editor);
+		document.body.appendChild(menubar.dom);
+
+		var animator = new Animator(editor);
+		document.body.appendChild(animator.dom);
+		window.animator = animator; // Expose animator
+		editor.animator = animator;
+		var timeline = new Timeline(editor);
+		document.body.appendChild(timeline.dom);
+
+		//
+
+		editor.storage.init(function () {
+
+			editor.storage.get(function (state) {
+
+				if (isLoadingFromHash) return;
+
+				if (state !== undefined) {
+
+					editor.fromJSON(state);
+
+				}
+
+				var selected = editor.config.getKey('selected');
+
+				if (selected !== undefined) {
+
+					editor.selectByUuid(selected);
+
+				}
+
+			});
+
+			//
+
+			var timeout;
+
+			function saveState() {
+				console.log(editor.config.getKey('autosave'));
+				if (editor.config.getKey('autosave') === false) {
+
+					return;
+
+				}
+
+				clearTimeout(timeout);
+
+				timeout = setTimeout(function () {
+
+					editor.signals.savingStarted.dispatch();
+
+					timeout = setTimeout(function () {
+
+						editor.storage.set(editor.toJSON());
+
+						editor.signals.savingFinished.dispatch();
+
+					}, 100);
+
+				}, 1000);
+
+			}
+
+			var signals = editor.signals;
+
+			signals.geometryChanged.add(saveState);
+			signals.objectAdded.add(saveState);
+			signals.objectChanged.add(saveState);
+			signals.objectRemoved.add(saveState);
+			signals.materialChanged.add(saveState);
+			signals.sceneBackgroundChanged.add(saveState);
+			signals.sceneFogChanged.add(saveState);
+			signals.sceneGraphChanged.add(saveState);
+			signals.scriptChanged.add(saveState);
+			signals.historyChanged.add(saveState);
+
+		});
+
+		//
+
+
+		document.addEventListener('dragover', function (event) {
+
+			event.preventDefault();
+			event.dataTransfer.dropEffect = 'copy';
+
+		}, false);
+
+		document.addEventListener('drop', function (event) {
+
+			event.preventDefault();
+
+			if (event.dataTransfer.types[0] === 'text/plain') return; // Outliner drop
+
+			if (event.dataTransfer.items) {
+
+				// DataTransferItemList supports folders
+
+				editor.loader.loadItemList(event.dataTransfer.items);
+
+			} else {
+
+				editor.loader.loadFiles(event.dataTransfer.files);
+
+			}
+
+		}, false);
+
+		function onWindowResize() {
+
+			editor.signals.windowResize.dispatch();
+
+		}
+
+		function setVisible(uuid) {
+			console.log(uuid);
+		}
+
+		window.addEventListener('resize', onWindowResize, false);
+
+		onWindowResize();
+
+		//
+
+		var isLoadingFromHash = false;
+		var hash = window.location.hash;
+
+		if (hash.substr(1, 5) === 'file=') {
+
+			var file = hash.substr(6);
+
+			if (confirm('Any unsaved data will be lost. Are you sure?')) {
+
+				var loader = new THREE.FileLoader();
+				loader.crossOrigin = '';
+				loader.load(file, function (text) {
+
+					editor.clear();
+					editor.fromJSON(JSON.parse(text));
+
+				});
+
+				isLoadingFromHash = true;
+
+			}
+
+		}
+
+		window.addEventListener('resize', function () {
+
+			editor.signals.windowResized.dispatch();
+
+		});
+
+		editor.signals.windowResized.dispatch();
+
+		// ServiceWorker
+
+		if ('serviceWorker' in navigator) {
+
+			try {
+
+				navigator.serviceWorker.register('sw.js');
+
+			} catch (error) {
+
+			}
+
+		}
+
+		var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+		socket.on('show', function (r_json) {
+			if (['glb', 'obj'].includes(r_json.compression)) {
+				DVisAddMesh(r_json.data, r_json.compression, r_json.graph_info.name, r_json.layers, r_json.t, r_json.meta_data, r_json.vis_conf);
+			}
+			else {
+				DVisAdd(r_json.data, r_json.data_format, r_json.size, r_json.color, r_json.graph_info.name,
+					r_json.layers, r_json.t, r_json.meta_data, r_json.vis_conf, r_json.shape);
+
+			}
+
+		}
+		);
+
+
+		socket.on('show_payload', function (r_json) {
+			if (r_json.data_format == 'obj_kf') {
+				editor.signals.setObjectKFState.dispatch(r_json.payload);
+			}
+			else {
+
+				DVisAddPayload(r_json.payload, r_json.data_format, r_json.size, r_json.color, r_json.graph_info.name,
+					r_json.layers, r_json.t, r_json.meta_data, r_json.vis_conf, r_json.shape)
+			}
+		});
+
+
+
+
+
+		socket.on('config', function (config) {
+			editor.updateConfig(config);
+		});
+
+		socket.on('add_camera', function (r_json) {
+
+			DVisAddCamera(r_json.fov, r_json.aspect_ratio, r_json.near, r_json.far, r_json.name, r_json.trs);
+		}
+		);
+		socket.on('track', function (track) {
+			console.log('inserting track');
+			editor.signals.insertTrack.dispatch(track);
+		});
+
+		socket.on('track_dict', function (track) {
+			console.log('inserting track_dict');
+			editor.signals.insertTrackDict.dispatch(track);
+		});
+
+		socket.on('send_pose', function (pose_data) {
+			console.log('updating pose');
+			editor.signals.updatePose.dispatch(pose_data);
+		});
+
+		socket.on('send_object_kf_state', function (obj_kf_state) {
+			console.log('send_object_kf_state pose');
+			editor.signals.setObjectKFState.dispatch(obj_kf_state);
+		});
+
+		socket.on('cam_image', function (cam_image) {
+			console.log('cam_image pose');
+			DVisAddCameraImage(cam_image.image_str, cam_image.cam_name, cam_image.name, cam_image.t, cam_image.layers, cam_image.vs)
+		});
+
+
+		socket.on('receive_icp', function (icp_dict) {
+			console.log('receive_icp');
+			editor.signals.receiveICP.dispatch(icp_dict);
+		});
+
+
+		socket.on('showMesh', function (r_json) {
+
+		}
+		);
+
+		socket.on('show_files', function (files) {
+			console.log(files);
+			DVisLoad(files);
+		});
+
+		socket.on('clear', function (r_json) {
+			DVisClear(r_json.reset_cam);
+		}
+		);
+		socket.on('send_cmd', function (r_json) {
+			DVisCmd(r_json);
+		});
+
+
+
+
+
+	</script>
+
+
+	</div>
+</body>
+
+</html>
