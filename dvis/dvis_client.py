@@ -33,7 +33,7 @@ def send2server(
             print(f"Sending {data_format} with shape {data.shape}")
     else:
         print("Sending group")
-    if data_format in ["hwc", "hist"]:
+    if data_format in ["hwc", "hist", 'img']:
         vis = visdom.Visdom(port=4999)
         if data_format == "hist":
             vis.histogram(data.flatten())
@@ -42,7 +42,6 @@ def send2server(
                 pass
             else:
                 data[np.all(data == 255, 2)] = np.array(color)
-
             vis.image(data.transpose(2, 0, 1), opts={"caption": name})
     else:
         if compression == "pkl":

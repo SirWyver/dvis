@@ -379,12 +379,8 @@ def dvis_img(
     c=0,
     l=[0],
     t=None,
-    add=True,
     name=None,
     meta=None,
-    bounds=None,
-    new=None,
-    ms=None,
     vis_conf=None,
 ):
     # TODO INFER FORMAT
@@ -403,6 +399,16 @@ def dvis_img(
             data = np.array(matplot2PIL(data))
     except:
         pass
+    
+    data = convert_to_nd(data)
+    if data.max()<=255:
+        if data.max()<=1:
+            data = data*255
+        data = data.astype(np.uint8)
+    else:
+        raise IOError("Image values cannot be interpreted")
+    if len(data.shape) == 2: # intensity image
+        data = np.tile(data[...,None],3)
     send2server(
         data=data,
         data_format="img",
@@ -410,10 +416,8 @@ def dvis_img(
         color=c,
         layers=l,
         t=t,
-        add=add,
         name=name,
         meta_data=meta,
-        compression="pkl",
         vis_conf=vis_conf,
     )
 
@@ -972,7 +976,7 @@ def dvis(data, fmt=None, s=1, vs=None, bs=None, c=0, l=0, t=None,  name=None, n=
     elif fmt == "group":
         dvis_group(name, meta)
     elif fmt == "img":
-        dvis_img()
+        dvis_img(data, vs, c, l, t, name, meta,  vis_conf)
     elif fmt == "hist":
         dvis_hist()
     else:
