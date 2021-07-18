@@ -4,7 +4,7 @@
 <h2 align="center">Python -> Browser </h2>
 
 
-<p style="text-align:center;">
+<p align="center">
   <img src="./static/tracking_sample.gif" width="40%" />
   <img src="./static/shapenet_sample.gif" width="42.5%" />
   <img src="./static/mesh_sample.gif" width="40%" />
