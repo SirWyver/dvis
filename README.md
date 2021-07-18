@@ -40,9 +40,11 @@ cd server
 python server.py
 ```
 Verify you can open http://localhost:5001/ and see something like this:
+
 <p align="center">
 <img src="./static/dvis_ui.png" width=40%>
 </p>
+
 Try out the client
 ```python
 import numpy as np
