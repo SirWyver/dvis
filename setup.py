@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="dvis-pkg-sirwyver",  # Replace with your own username
-    version="0.8.1.1",
+    version="0.8.1.2",
     author="Norman Müller",
     author_email="norman.mueller@tum.de",
     description="The best web-based visualizer",

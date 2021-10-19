@@ -67,14 +67,13 @@ def convert2std(data_np, fmt, bounds=None, c=0):
         return np.argwhere(data_np == 1), "xyz"
     elif fmt == "xyzc":
         if np.any(data_np[:, 3] > 1) or np.all((data_np[:, 3] == 0) | (data_np[:, 3] == 1)):
-            return (
-                np.concatenate([data_np[:, :3], np.array([get_color(x) for x in data_np[:, 3]])], 1),
-                "xyzrgb",
-            )
+            return (np.concatenate([data_np[:, :3], np.array([get_color(x) for x in data_np[:, 3]])], 1), "xyzrgb")
         else:
             ref_color = get_color(c) if c > 0 else 1
             return (
-                np.concatenate([data_np[:, :3], ref_color * np.stack((data_np[:, 3], data_np[:, 3], data_np[:, 3]), -1)], 1),
+                np.concatenate(
+                    [data_np[:, :3], ref_color * np.stack((data_np[:, 3], data_np[:, 3], data_np[:, 3]), -1)], 1
+                ),
                 "xyzrgb",
             )
     elif fmt == "xyzrgb":
@@ -275,15 +274,15 @@ def prepare_cam(data, name):
     return cam_data
 
 
-
 def dvis_cmd(data, **kwargs):
     sendCmd2server(data)
 
 
 def dvis_inject(data, **kwargs):
     sendInject2server(data)
-##### refactoring
 
+
+##### refactoring
 
 
 def dvis_obj_kf(data, t, name):
@@ -301,15 +300,7 @@ def dvis_obj_kf(data, t, name):
     trs = convert_to_nd(trs)
     obj_kf_state = {"name": obj_name, "trs": trs, "visible": visible, "kf": kf}
 
-    send_payload2server(obj_kf_state,'obj_kf',1,0,[0],kf)
-
-
-
-
-
-
-
-
+    send_payload2server(obj_kf_state, "obj_kf", 1, 0, [0], kf)
 
 
 def dvis_pose(data, name):
@@ -349,40 +340,30 @@ def dvis_track(data, name, vs, c, l):
     sendTrack2server(track_data, None, False, vs, c, l)
 
 
-    
 def dvis_cfg(data):
     send_config(data)
 
 
-
-def dvis_mesh_pc(
-    data,
-    vs=1,
-    c=0,
-    l=0,
-    t=None,
-    name=None,
-    meta=None,
-    ms=None,
-    vis_conf=None,
-    shape="v",
-):
+def dvis_mesh_pc(data, vs=1, c=0, l=0, t=None, name=None, meta=None, ms=None, vis_conf=None, shape="v"):
     data_std = np.array(data.vertices)
     if ms is not None and len(data_std) > ms:
         data_std = data_std[np.random.choice(len(data_std), ms, replace=False)]
-    send2server(data=data_std, data_format="mesh_pc", size=vs, color=c, layers=l, t=t, name=name, meta_data=meta, compression="pkl", vis_conf=vis_conf, shape=shape)
+    send2server(
+        data=data_std,
+        data_format="mesh_pc",
+        size=vs,
+        color=c,
+        layers=l,
+        t=t,
+        name=name,
+        meta_data=meta,
+        compression="pkl",
+        vis_conf=vis_conf,
+        shape=shape,
+    )
 
 
-def dvis_img(
-    data,
-    vs=1,
-    c=0,
-    l=[0],
-    t=None,
-    name=None,
-    meta=None,
-    vis_conf=None,
-):
+def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None):
     # TODO INFER FORMAT
     if isinstance(data, ImageFile.ImageFile):
         data = np.array(data)
@@ -399,26 +380,18 @@ def dvis_img(
             data = np.array(matplot2PIL(data))
     except:
         pass
-    
+
     data = convert_to_nd(data)
-    if data.max()<=255:
-        if data.max()<=1:
-            data = data*255
+    if data.max() <= 255:
+        if data.max() <= 1:
+            data = data * 255
         data = data.astype(np.uint8)
     else:
         raise IOError("Image values cannot be interpreted")
-    if len(data.shape) == 2: # intensity image
-        data = np.tile(data[...,None],3)
+    if len(data.shape) == 2:  # intensity image
+        data = np.tile(data[..., None], 3)
     send2server(
-        data=data,
-        data_format="img",
-        size=vs,
-        color=c,
-        layers=l,
-        t=t,
-        name=name,
-        meta_data=meta,
-        vis_conf=vis_conf,
+        data=data, data_format="img", size=vs, color=c, layers=l, t=t, name=name, meta_data=meta, vis_conf=vis_conf
     )
 
 
@@ -426,16 +399,7 @@ def dvis_group(name, meta):
     send2server(None, "group", vs=1, c=1, t=0, l=[0], add=False, name=name, meta=meta)
 
 
-
-def dvis_points(data,  fmt="points",  s=1,
-    c=0,
-    l=[0],
-    t=None,
-    name=None,
-    meta=None,
-    ms=None,
-    vis_conf=None,
-    shape='b'):
+def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=None, ms=None, vis_conf=None, shape="b"):
     """Display points
 
     Args:
@@ -443,9 +407,9 @@ def dvis_points(data,  fmt="points",  s=1,
         fmt (str): points, xyzrgb, xyz, xyzc
     """
     if name is None:
-        name = 'Points'
+        name = "Points"
     data = convert_to_nd(data)
-    if fmt == 'points':
+    if fmt == "points":
         # infer data format based on data shape
         if len(data.shape) == 4:
             # squeeze single dimensions
@@ -462,46 +426,39 @@ def dvis_points(data,  fmt="points",  s=1,
                     fmt = "xyzrgb"
             elif data.shape[1] == 3:
                 # xyz
-                    fmt = "xyz"
+                fmt = "xyz"
             elif data.shape[1] == 4:
-                    # xyz c
+                # xyz c
                 if np.any(data[:, 3] > 1) or np.all((data[:, 3] == 0) | (data[:, 3] == 1)):
-                    data,fmt  = (
+                    data, fmt = (
                         np.concatenate([data[:, :3], np.array([get_color(x) for x in data[:, 3]])], 1),
                         "xyzrgb",
                     )
                 else:
                     ref_color = get_color(c) if c > 0 else 1
-                    data,fmt  = (
-                        np.concatenate([data[:, :3], ref_color * np.stack((data[:, 3], data[:, 3], data[:, 3]), -1)], 1),
+                    data, fmt = (
+                        np.concatenate(
+                            [data[:, :3], ref_color * np.stack((data[:, 3], data[:, 3], data[:, 3]), -1)], 1
+                        ),
                         "xyzrgb",
                     )
         else:
             raise IOError(f"Points format {data.shape} not understood")
 
-    if fmt == 'xyzrgb':
+    if fmt == "xyzrgb":
         if np.any(data[:, 3:6] > 1) and np.all(data[:, 3:6] == data[:, 3:6].astype(np.int)):
             ## color as uint 8
             data = data.astype(np.float32)
             data[:, 3:6] /= 255
-    
 
     ## downsample
     if ms is not None and len(data) > ms:
         data = data[np.random.choice(len(data), ms, replace=False)]
-    
-    
-    send2server(data, fmt,s,c, l,t,name,meta,vis_conf,shape)
 
-def dvis_voxels(data,  fmt="voxels",  s=1,
-    c=0,
-    l=[0],
-    t=None,
-    name=None,
-    meta=None,
-    ms=None,
-    vis_conf=None,
-    shape='v'):
+    send2server(data, fmt, s, c, l, t, name, meta, vis_conf, shape)
+
+
+def dvis_voxels(data, fmt="voxels", s=1, c=0, l=[0], t=None, name=None, meta=None, ms=None, vis_conf=None, shape="v"):
     """Display voxels
 
     Args:
@@ -509,10 +466,10 @@ def dvis_voxels(data,  fmt="voxels",  s=1,
         fmt (str): voxels, cwhl, whlc, whl 
     """
     if name is None:
-        name = 'Voxels'
+        name = "Voxels"
 
     data = convert_to_nd(data)
-    if fmt == 'voxels':
+    if fmt == "voxels":
         # infer data format based on data shape
         if len(data.shape) == 5:
             # squeeze single dimensions
@@ -523,34 +480,27 @@ def dvis_voxels(data,  fmt="voxels",  s=1,
             if data.shape[0] == 1:
                 data = data[0]
         if len(data.shape) == 4:
-            fmt = 'whlc'
+            fmt = "whlc"
         if len(data.shape) == 3:
-            fmt = 'whl'
-        else: 
+            fmt = "whl"
+        else:
             raise IOError(f"Points format {data.shape} not understood")
-            
+
     # convert to xyzrgb default format
 
     if fmt == "cwhl":
         valid_indices = np.all((data >= 0) & (data <= 1), 0)
-        data. fmt = np.concatenate([np.argwhere(valid_indices), data[:, valid_indices].T], 1), 'xyzrgb'
+        data.fmt = np.concatenate([np.argwhere(valid_indices), data[:, valid_indices].T], 1), "xyzrgb"
     elif fmt == "whlc":
         valid_indices = np.all((data >= 0) & (data <= 1), -1)
-        data, fmt = np.concatenate([np.argwhere(valid_indices), data[valid_indices]], 1), 'xyzrgb'
+        data, fmt = np.concatenate([np.argwhere(valid_indices), data[valid_indices]], 1), "xyzrgb"
     elif fmt == "whl":
-        data, fmt= np.argwhere(data == 1), "xyz"
-    
-    dvis_points( data, fmt,s,c, l,t,name,meta,vis_conf,ms,shape)
+        data, fmt = np.argwhere(data == 1), "xyz"
 
-def dvis_box(data,  fmt="box",  s=1,
-    c=0,
-    l=[0],
-    t=None,
-    name=None,
-    meta=None,
-    ms=None,
-    vis_conf=None,
-    shape='v'):
+    dvis_points(data, fmt, s, c, l, t, name, meta, vis_conf, ms, shape)
+
+
+def dvis_box(data, fmt="box", s=1, c=0, l=[0], t=None, name=None, meta=None, ms=None, vis_conf=None, shape="v"):
     """Display boxed annotation
 
     Args:
@@ -578,19 +528,26 @@ def dvis_box(data,  fmt="box",  s=1,
     if name is None:
         name = fmt
     # make hbboxes transparent
-    if fmt in ['hbboxes', 'hbboxes_c']:    
+    if fmt in ["hbboxes", "hbboxes_c"]:
         if vis_conf is None:
             vis_conf = dict()
         if "transparent" not in vis_conf:
             vis_conf["transparent"] = True
         if "opacity" not in vis_conf:
             vis_conf["opacity"] = 0.6
+    if fmt in ["corners"]:
+        if data.shape == (4, 4):
+            from dutils import dot, bbox2bbox_corners
+
+            unit_bbox = 0.5 * np.array([-1, -1, -1, 1, 1, 1])
+            unit_corners = bbox2bbox_corners(unit_bbox)
+            data = dot(data, unit_corners)
 
     ## downsample
     if ms is not None and len(data) > ms:
         data = data[np.random.choice(len(data), ms, replace=False)]
 
-    send2server(data, fmt,s,c, l,t,name,meta,vis_conf,shape)
+    send2server(data, fmt, s, c, l, t, name, meta, vis_conf, shape)
 
 
 def dvis_mesh(data, c=0, l=0, t=None, name=None, meta=None, ms=None, vis_conf=None):
@@ -616,7 +573,8 @@ def dvis_mesh(data, c=0, l=0, t=None, name=None, meta=None, ms=None, vis_conf=No
         # downsample
         tm = tm.simplify_quadratic_decimation(ms)
 
-    return send2server(tm, compression,None,c, l,t,name,meta,vis_conf,None,compression)
+    return send2server(tm, compression, None, c, l, t, name, meta, vis_conf, None, compression)
+
 
 def dvis_vec(data, s=1, c=0, l=[0], t=0, name="vec", meta=None, vis_conf=None):
     """Display vector(s)
@@ -627,27 +585,27 @@ def dvis_vec(data, s=1, c=0, l=[0], t=0, name="vec", meta=None, vis_conf=None):
     """
     if name is None:
         name = "vec"
-    start_pos = np.zeros((1,3))
+    start_pos = np.zeros((1, 3))
     if isinstance(data, (tuple, list)):
         # vector from a to b
         if len(data) > 2:
             # regard data as single vec
             end_pos = np.array([data])
-            
+
         else:
             start_pos, end_pos = data
-            start_pos, end_pos = np.expand_dims(start_pos,0), np.expand_dims(end_pos,0)
+            start_pos, end_pos = np.expand_dims(start_pos, 0), np.expand_dims(end_pos, 0)
     elif isinstance(data, (np.ndarray, torch.Tensor)):
         if len(data.shape) == 1:
             if data.shape[0] == 3:
-                end_pos = data[None,:]
+                end_pos = data[None, :]
             else:
-                start_pos, end_pos = np.expand_dims(data[:3],0), np.expand_dims(data[3:6],0)
+                start_pos, end_pos = np.expand_dims(data[:3], 0), np.expand_dims(data[3:6], 0)
         elif len(data.shape) == 2:
             if data.shape[1] == 3:
-                start_pos, end_pos = np.tile(start_pos,(data.shape[0],1)), data
+                start_pos, end_pos = np.tile(start_pos, (data.shape[0], 1)), data
             else:
-                start_pos, end_pos = data[:,:3], data[:,3:6]
+                start_pos, end_pos = data[:, :3], data[:, 3:6]
 
     if isinstance(end_pos, torch.Tensor):
         end_pos = end_pos.cpu().numpy()
@@ -667,6 +625,7 @@ def dvis_vec(data, s=1, c=0, l=[0], t=0, name="vec", meta=None, vis_conf=None):
         vis_conf=vis_conf,
         compression="pkl",
     )
+
 
 def dvis_line(data, s=1, c=0, l=[0], t=0, name="line", meta=None, vis_conf=None):
     """Display vector
@@ -689,6 +648,7 @@ def dvis_line(data, s=1, c=0, l=[0], t=0, name="line", meta=None, vis_conf=None)
         compression="pkl",
     )
 
+
 def dvis_arrow(data, s=1, c=0, l=[0], t=0, name="arrow", meta=None, vis_conf=None):
     """Display arrow
     Args:
@@ -700,7 +660,7 @@ def dvis_arrow(data, s=1, c=0, l=[0], t=0, name="arrow", meta=None, vis_conf=Non
     if data_np.shape[0] == 3 and data_np.shape[1] == 3:
         trans_fmt = np.eye(4)
         trans_fmt[:3, :3] = data_np
-    else: 
+    else:
         trans_fmt = data_np
     send2server(
         data=trans_fmt,
@@ -715,6 +675,7 @@ def dvis_arrow(data, s=1, c=0, l=[0], t=0, name="arrow", meta=None, vis_conf=Non
         compression="pkl",
     )
 
+
 def dvis_transform(data, s=1, c=0, l=[0], t=0, name="transform", meta=None, vis_conf=None):
     """Display transformation
     Args:
@@ -726,7 +687,7 @@ def dvis_transform(data, s=1, c=0, l=[0], t=0, name="transform", meta=None, vis_
     if data_np.shape[0] == 3 and data_np.shape[1] == 3:
         trans_fmt = np.eye(4)
         trans_fmt[:3, :3] = data_np
-    else: 
+    else:
         trans_fmt = data_np
     send2server(
         data=trans_fmt,
@@ -740,6 +701,8 @@ def dvis_transform(data, s=1, c=0, l=[0], t=0, name="transform", meta=None, vis_
         vis_conf=vis_conf,
         compression="pkl",
     )
+
+
 def _infer_format(data):
     if isinstance(data, (trimesh.Trimesh, trimesh.Scene)):
         fmt = "mesh"
@@ -747,7 +710,11 @@ def _infer_format(data):
         fmt = "group"
     elif isinstance(data, trimesh.PointCloud):
         fmt = "mesh_pc"
-    elif isinstance(data, (ImageFile.ImageFile)) or (hasattr(matplotlib, "axes") and isinstance(data, matplotlib.axes.Axes)) or (hasattr(matplotlib, "figure") and isinstance(data, matplotlib.figure.Figure)):
+    elif (
+        isinstance(data, (ImageFile.ImageFile))
+        or (hasattr(matplotlib, "axes") and isinstance(data, matplotlib.axes.Axes))
+        or (hasattr(matplotlib, "figure") and isinstance(data, matplotlib.figure.Figure))
+    ):
         fmt = "img"
     elif isinstance(data, str):
         suffix = data.split(".")[-1]
@@ -768,42 +735,42 @@ def _infer_format(data):
                 data = data[0]
 
         if len(data.shape) == 4:
-            if data.shape[0] == 3 or data.shape[3] ==3:
+            if data.shape[0] == 3 or data.shape[3] == 3:
                 fmt = "voxels"
                 # fmt = "cwhl"
             else:
                 raise IOError("Data format %s not understood" % str(data.shape))
         elif len(data.shape) == 3:
-                fmt = "voxels"
+            fmt = "voxels"
         elif len(data.shape) == 2:
             if data.shape[1] == 6:
                 if data.shape[0] > 1:
                     # xyz rgb
-                    fmt = "points" #  "xyzrgb"
+                    fmt = "points"  #  "xyzrgb"
                 else:
-                    fmt = "box" # bbox
+                    fmt = "box"  # bbox
             elif data.shape[1] == 3:
                 # xyz
                 if data.shape[0] == 3:
                     fmt = "transform"
                 else:
-                    fmt = "points" # xyz
+                    fmt = "points"  # xyz
             elif data.shape[1] == 4:
                 if data.shape[0] == 4:
                     # transform
                     fmt = "transform"
                 else:
                     # xyz c
-                    fmt = "points" # "xyzc"
+                    fmt = "points"  # "xyzc"
 
             elif data.shape[1] == 2:
-                fmt = "points2d" # "uv"
+                fmt = "points2d"  # "uv"
             elif data.shape[1] == 5:
-                fmt = "poinst2d" #  "uvrgb"
+                fmt = "poinst2d"  #  "uvrgb"
             elif data.shape[1] == 7:
-                fmt = "box" #  "hbboxes"
+                fmt = "box"  #  "hbboxes"
             elif data.shape[1] == 8:
-                fmt = "box" # "hbboxes_c"
+                fmt = "box"  # "hbboxes_c"
             else:
                 raise IOError("Data format %s not understood" % str(data.shape))
         elif len(data.shape) == 1:
@@ -812,6 +779,7 @@ def _infer_format(data):
         else:
             raise IOError("Data format %s not understood" % str(data.shape))
     return data, fmt
+
 
 def dvis_cam(data, name="RenderCam"):
     """Adds a new camera
@@ -832,9 +800,10 @@ def dvis_cam(data, name="RenderCam"):
     """
     if name is None:
         name = "RenderCam"
+
     def intrinsics2fov(intrinsics):
-        fov_x = np.arctan(2 * intrinsics[0, 2] / (2 * intrinsics[0, 0]))/np.pi*180*2
-        fov_y = np.arctan(2 * intrinsics[1, 2] / (2 * intrinsics[1, 1]))/np.pi*180*2
+        fov_x = np.arctan(2 * intrinsics[0, 2] / (2 * intrinsics[0, 0])) / np.pi * 180 * 2
+        fov_y = np.arctan(2 * intrinsics[1, 2] / (2 * intrinsics[1, 1])) / np.pi * 180 * 2
         return fov_x, fov_y
 
     def intrinsics2aspect_ratio(intrinsics):
@@ -855,10 +824,10 @@ def dvis_cam(data, name="RenderCam"):
         cam_data["fov"] = fov_x
         cam_data["aspect_ratio"] = aspect_ratio
 
-    send_payload2server(cam_data,'cam',1,0,[0],None,name)
+    send_payload2server(cam_data, "cam", 1, 0, [0], None, name)
 
 
-def dvis_cam_img(data,s=1, l=0, t=None, name="CamImg"):
+def dvis_cam_img(data, s=1, l=0, t=None, name="CamImg"):
     """Camera with Image
 
     Args:
@@ -884,7 +853,6 @@ def dvis_cam_img(data,s=1, l=0, t=None, name="CamImg"):
         cam_name = name
         name = f"CamImg_{t[0]}"
 
-
     if isinstance(image_data, ImageFile.ImageFile):
         image = image_data
     elif isinstance(image_data, np.ndarray):
@@ -894,7 +862,25 @@ def dvis_cam_img(data,s=1, l=0, t=None, name="CamImg"):
 
     send_payload2server({"image": image, "cam_name": cam_name}, "cam_img", s, 0, l, t, name)
 
-def dvis(data, fmt=None, s=1, vs=None, bs=None, c=0, l=0, t=None,  name=None, n=None, meta=None, bounds=None,  ms=None, vis_conf=None, shape="v", **kwargs):
+
+def dvis(
+    data,
+    fmt=None,
+    s=1,
+    vs=None,
+    bs=None,
+    c=0,
+    l=0,
+    t=None,
+    name=None,
+    n=None,
+    meta=None,
+    bounds=None,
+    ms=None,
+    vis_conf=None,
+    shape="v",
+    **kwargs,
+):
     """Call to interact with web visualizer
 
     Args:
@@ -921,29 +907,29 @@ def dvis(data, fmt=None, s=1, vs=None, bs=None, c=0, l=0, t=None,  name=None, n=
         l = [l]
     if isinstance(t, int):
         t = [t]
-    if isinstance(c,str):
+    if isinstance(c, str):
         c = int_hash(c)
 
     if n is not None:
-        name = n #name
+        name = n  # name
     ### geometric shape
     if vs is not None:
-        shape = 'v' # voxel
+        shape = "v"  # voxel
         s = vs
     if bs is not None:
-        shape = 'b' # ball
+        shape = "b"  # ball
         s = bs
     if fmt is None:
         data, fmt = _infer_format(data)
 
     if fmt in ["points", "xyz", "xyzrgb", "xyzc"]:
-        dvis_points(data,fmt,s,c,l,t,name,meta,ms,vis_conf,shape)
-    elif fmt in ['voxels', 'whl', 'whlc', 'cwhl']:
-        dvis_voxels(data,fmt,s,c,l,t,name,meta,ms,vis_conf,shape)
-    elif fmt in ['box', 'bbox', 'hbboxes', 'hbboxes_c', 'corners']:
-        dvis_box(data,fmt,s,c,l,t,name,meta,ms,vis_conf,shape)
-    elif fmt in ['mesh']:
-        dvis_mesh(data,c,l,t,name,meta,ms,vis_conf)
+        dvis_points(data, fmt, s, c, l, t, name, meta, ms, vis_conf, shape)
+    elif fmt in ["voxels", "whl", "whlc", "cwhl"]:
+        dvis_voxels(data, fmt, s, c, l, t, name, meta, ms, vis_conf, shape)
+    elif fmt in ["box", "bbox", "hbboxes", "hbboxes_c", "corners"]:
+        dvis_box(data, fmt, s, c, l, t, name, meta, ms, vis_conf, shape)
+    elif fmt in ["mesh"]:
+        dvis_mesh(data, c, l, t, name, meta, ms, vis_conf)
     elif fmt == "vec":
         dvis_vec(data, s, c, l, t, name, meta, vis_conf)
     elif fmt == "line":
@@ -976,7 +962,7 @@ def dvis(data, fmt=None, s=1, vs=None, bs=None, c=0, l=0, t=None,  name=None, n=
     elif fmt == "group":
         dvis_group(name, meta)
     elif fmt == "img":
-        dvis_img(data, vs, c, l, t, name, meta,  vis_conf)
+        dvis_img(data, vs, c, l, t, name, meta, vis_conf)
     elif fmt == "hist":
         dvis_hist()
     else:
@@ -988,6 +974,8 @@ def dvis(data, fmt=None, s=1, vs=None, bs=None, c=0, l=0, t=None,  name=None, n=
         elif isinstance(new, dict):
             ivis(width=new.get("width"), height=new.get("height"), url=new.get("url"), port=new.get("port", port))
     """
+
+
 def dclear(reset_cam=False):
     send_clear(reset_cam)
 
