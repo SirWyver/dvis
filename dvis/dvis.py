@@ -537,6 +537,7 @@ def dvis_box(data, fmt="box", s=1, c=0, l=[0], t=None, name=None, meta=None, ms=
             vis_conf["opacity"] = 0.6
     if fmt in ["corners"]:
         if data.shape == (4, 4):
+            # actually a transform
             from dutils import dot, bbox2bbox_corners
 
             unit_bbox = 0.5 * np.array([-1, -1, -1, 1, 1, 1])
