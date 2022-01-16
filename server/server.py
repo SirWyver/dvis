@@ -34,6 +34,7 @@ def encode_to_base64(x):
 def screenshot():
     json_data = json.loads(request.data)
     img_path = json_data["path"]
+    print(f"Store screenshot at {img_path}")
     img_root = Path(img_path).parent
     content = json_data["img_b64"].split(";")[1]
     image_encoded = content.split(",")[1]
@@ -255,7 +256,7 @@ def show():
 def show_payload():
     r = request.json
     r['payload'] = pickle.loads(codecs.decode(r['payload'].encode(), "base64"))
-    
+
     socketio.emit(
         "show_payload",
         {

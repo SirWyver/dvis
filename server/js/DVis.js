@@ -8,7 +8,6 @@ import { setVisible } from './libs/ui.js';
 import { BufferGeometryUtils } from '../../examples/jsm/utils/BufferGeometryUtils.js'
 import SpriteText from './libs/three-spritetext.js';
 
-
 function get_color(color_code) {
     var color_palette = [
         [23, 23, 252],
@@ -77,7 +76,6 @@ function get_color(color_code) {
 }
 
 
-
 function _generate_voxel_mesh(data_arr, col_size, vox_size = 1, color = [0.3, 0.2, 0.5], shape = 'v') {
     var row_size = data_arr.length / col_size;
     if (shape === 'v') {
@@ -142,6 +140,35 @@ function _generate_voxel_mesh(data_arr, col_size, vox_size = 1, color = [0.3, 0.
     inst_mesh.extends = [minX, minY, minZ, maxX, maxY, maxZ];
     return inst_mesh;
 
+}
+
+
+function _generate_voxel_mesh2(data_arr, col_size, vox_size = 1, color = [0.3, 0.2, 0.5], shape = 'v') {
+    var row_size = data_arr.length / col_size;
+    const geometry = new THREE.BufferGeometry();
+    var x, y, z;
+
+    const positions = [];
+    const colors = [];
+    const t_color = new THREE.Color();
+    for (var i = 0; i < row_size; i++) {
+        x = data_arr[i * col_size + 0];
+        y = data_arr[i * col_size + 1];
+        z = data_arr[i * col_size + 2];
+        positions.push(x, y, z);
+        t_color.setRGB(color[0], color[1], color[2]);
+        colors.push(t_color.r, t_color.g, t_color.b);
+    }
+
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+    geometry.computeBoundingSphere();
+
+
+    const material = new THREE.PointsMaterial({ size: vox_size, vertexColors: true });
+    var points = new THREE.Points(geometry, material);
+    return points;
 }
 function _generate_text(text, position = [0, 0, 0], size = 1.0, color = [0.3, 0.3, 0.5]) {
     const ContainerText = new SpriteText(text, 8);
