@@ -45,7 +45,10 @@ def send2server(
             vis.image(data.transpose(2, 0, 1), opts={"caption": name})
     else:
         if compression == "pkl":
-            data = pickle.dumps(data.astype(np.float32).copy(order="C"))
+            if isinstance(data, np.ndarray):
+                data = pickle.dumps(data.astype(np.float32).copy(order="C"))
+            else:
+                data = pickle.dumps(data)
         elif compression == 'gzip':
             data = gzip.compress(data.astype(np.float32).copy(order="C"))
         elif compression in ["glb", 'obj']: # meshes
@@ -62,10 +65,15 @@ def send2server(
                     data = trimesh.Trimesh(vertices=tm.vertices, faces=tm.faces).export(file_type="obj")
                 print(f"Sending trimesh of {len(tm.vertices)} vertices and {len(tm.faces)} faces")
             pass
+
+        if compression is None:
+            send_data = data
+        else:
+            send_data = encode_to_base64(data)
         requests.post(
             url=f"http://localhost:{port}/show",
             json={
-                "data": encode_to_base64(data),
+                "data": send_data,
                 "compression": compression,
                 "data_format": data_format,
                 "size": size,

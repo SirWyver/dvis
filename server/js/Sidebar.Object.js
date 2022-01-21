@@ -366,6 +366,18 @@ var SidebarObject = function (editor) {
 
 	container.add(objectRenderOrderRow);
 
+	// point size
+
+	var objectPointSizeRow = new UIRow();
+	var objectPointSize = new UINumber(1).onChange(update);
+
+	objectPointSizeRow.add(new UIText("Point size").setWidth('90px'));
+	objectPointSizeRow.add(objectPointSize);
+
+	container.add(objectPointSizeRow);
+
+
+
 	//
 	var objectLayerRow = new UIRow();
 	var objectRenderOrder = new UIInteger().setWidth('50px').onChange(update);

@@ -5,7 +5,6 @@ Note:
     Requires DVIS server to run - sends data via websocket to localhost:5001 (3D visualizations) and localhost:4999 (using visdom for 2D visualization).
 """
 import numpy as np
-from numpy.lib.arraysetops import isin
 import torch
 from .dvis_client_old import (
     send2server,
@@ -330,7 +329,7 @@ def dvis_text(data, vs=1, c=0, l=[0], t=0, name="text", meta=None, vis_conf=None
         t=t,
         name=name,
         meta_data=meta,
-        compression="pkl",
+        compression=None,
         vis_conf=vis_conf,
     )
 

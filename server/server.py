@@ -229,7 +229,8 @@ def show():
     if r['compression'] == 'gzip':
         r['data'] = encode_to_base64(gzip.decompress(codecs.decode(r['data'].encode(), "base64")))
     elif r['compression'] == 'pkl':
-        r['data'] = encode_to_base64(pickle.loads(codecs.decode(r['data'].encode(), "base64")))
+        pass
+        # r['data'] = encode_to_base64(pickle.loads(codecs.decode(r['data'].encode(), "base64")))
     elif r['compression'] in ['obj', 'glb']:
         pass
     else:

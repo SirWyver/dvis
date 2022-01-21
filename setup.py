@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="dvis",  # Replace with your own username
-    version="0.8.1.3",
+    name="dvis",  
+    version="0.8.2.2",
     author="Norman Müller",
     author_email="norman.mueller@tum.de",
     url="https://github.com/SirWyver/dvis",
@@ -19,4 +19,17 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.6",
+    entry_points = {
+        'console_scripts': ['dvis=dvis.dvis_cli:dvis_cli'],
+    },
+    install_requires=[
+        "visdom",
+        "trimesh",
+        "pillow",
+        "flask==1.1.2",
+        "flask_socketio==4.3.0",
+        "simple-websocket==0.2.0",
+        "python-socketio==4.6.1",
+        "eventlet"
+    ]
 )

@@ -410,7 +410,7 @@ function generate_object(data, data_format, size = 1, color_code = 1, shape = 'v
     }
     var color = get_color(color_code);
     if (size == null) {
-        size = size;
+        size = 1;
     }
     if (data_format == 'xyzrgb') {
         return _generate_voxel_mesh(data_arr, 6, size, color, shape);
@@ -443,6 +443,7 @@ function generate_object(data, data_format, size = 1, color_code = 1, shape = 'v
         return _generate_arrow(data_arr, size, color);
     }
     else if (data_format == 'text') {
+        console.log(data);
         return _generate_text(data.text, data.position, size, color)
     }
     else if (data_format == 'vec') {
@@ -690,6 +691,7 @@ var DVisAdd = function (data, data_format, size, color_code, name, layers = [0],
         var mesh = generate_object(data, data_format, size, color_code, shape);
     mesh.name = name;
     mesh.meta_data = meta_data;
+    mesh.data_format == data_format;
     //keyframe handling
     mesh.keyframes = t;
     if (t == null) {
