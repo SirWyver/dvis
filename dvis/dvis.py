@@ -364,7 +364,7 @@ def dvis_mesh_pc(data, vs=1, c=0, l=0, t=None, name=None, meta=None, ms=None, vi
 
 def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None):
     # TODO INFER FORMAT
-    if isinstance(data, ImageFile.ImageFile):
+    if isinstance(data, (ImageFile.ImageFile, Image)):
         data = np.array(data)
     if isinstance(data, str):
         fn = data
@@ -382,6 +382,8 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
 
     data = convert_to_nd(data)
     if data.max() <= 255:
+        if  (data.min()>=-1) and (data.min() < 0) and data.max()<=1:
+            data = data * 0.5 + 0.5
         if data.max() <= 1:
             data = data * 255
         data = data.astype(np.uint8)
@@ -389,6 +391,9 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
         raise IOError("Image values cannot be interpreted")
     if len(data.shape) == 2:  # intensity image
         data = np.tile(data[..., None], 3)
+    elif len(data.shape) == 3:
+        if data.shape[0] == 3: # C,W,H
+            data = np.transpose(data,[1,2,0])
     send2server(
         data=data, data_format="img", size=vs, color=c, layers=l, t=t, name=name, meta_data=meta, vis_conf=vis_conf
     )
