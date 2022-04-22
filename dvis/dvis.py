@@ -364,7 +364,7 @@ def dvis_mesh_pc(data, vs=1, c=0, l=0, t=None, name=None, meta=None, ms=None, vi
 
 def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None):
     # TODO INFER FORMAT
-    if isinstance(data, (ImageFile.ImageFile, Image)):
+    if isinstance(data, (ImageFile.ImageFile)):
         data = np.array(data)
     if isinstance(data, str):
         fn = data

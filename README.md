@@ -19,7 +19,8 @@ dvis("mesh.obj") # load file
 dvis(point_cloud, vs=0.03) # point cloud with specific voxel size
 dvis(bboxes,'bbox', c=3, name='my_boxes') # show colored boxes 
 dvis(np.array([0,0,0,1,2,3]), 'vec') # vector from origin to (1,2,3)
-dvis(transform, 'transform'), # display transformation
+dvis(transform, 'transform') # display transformation
+dvis(img, 'img') # display an image using visdom
 ```
 Check out more examples in `./examples`
 ```
@@ -28,29 +29,45 @@ python examples/point_clouds.py
 python examples/...
 ```
 
+
 # 🚀 Getting started
 
-Install the `dvis` package
+Install the `dvis` package:
+Via pypi:
 ```
+pip install dvis
+```
+or from source:
+```
+git clone git@github.com:SirWyver/dvis.git
+cd dvis
 pip install .
 ```
-Start the web server
+Start the 3d web server
 ```
 cd server
 python server.py
 ```
+
 Verify you can open http://localhost:5001/ and see something like this:
 
 <p align="center">
 <img src="./static/dvis_ui.png" width=40%>
 </p>
 
+Optionally, also start [visdom](https://github.com/fossasia/visdom) to display images/videos/charts:
+```
+visdom -p 4999
+```
+The visdom server should be accessible at http://localhost:4999/.
+
 Try out the client
 ```python
 import numpy as np
 from dvis import dvis
-dvis(np.random.rand(1000,6), s=0.03)
-# sends randomly colored 1000x3 point cloud to the server
+dvis(np.random.rand(1000,6), s=0.03) # sends randomly colored 1000x3 point cloud to the 3d server
+dvis("static/icon.png","img") # sends an image to the 2d server
+
 ```
 Verify you can see a colored point cloud
 
