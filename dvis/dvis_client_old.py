@@ -43,6 +43,9 @@ def send2server(
                 data[np.all(data == 255, 2)] = np.array(color)
 
             vis.image(data.transpose(2, 0, 1), opts={"caption": name})
+    elif data_format in ["gif"]:
+        vis = visdom.Visdom(port=4999)
+        vis.text(f'<img src="data:image/gif;base64,{data} ">', opts={"caption": name})
     else:
         if compression == "pkl":
             data = pickle.dumps(data)

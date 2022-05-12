@@ -9,31 +9,21 @@ from PIL import ImageFile, Image
 import gzip
 import base64
 
+
 def encode_to_base64(x):
-    if isinstance(x,str):
+    if isinstance(x, str):
         return x
     return base64.b64encode(x).decode("utf8")
 
-def send2server(
-    data,
-    data_format,
-    size,
-    color,
-    layers,
-    t,
-    name="",
-    meta_data=None,
-    vis_conf=None,
-    shape="v",
-    compression='gzip'
-):
-    port=5001
+
+def send2server(data, data_format, size, color, layers, t, name="", meta_data=None, vis_conf=None, shape="v", compression="gzip"):
+    port = 5001
     if data is not None:
         if isinstance(data, np.ndarray):
             print(f"Sending {data_format} with shape {data.shape}")
     else:
         print("Sending group")
-    if data_format in ["hwc", "hist", 'img']:
+    if data_format in ["hwc", "hist", "img"]:
         vis = visdom.Visdom(port=4999)
         if data_format == "hist":
             vis.histogram(data.flatten())
@@ -43,17 +33,20 @@ def send2server(
             else:
                 data[np.all(data == 255, 2)] = np.array(color)
             vis.image(data.transpose(2, 0, 1), opts={"caption": name})
+    elif data_format in ["gif"]:
+        vis = visdom.Visdom(port=4999)
+        vis.text(f'<img src="data:image/gif;base64,{data} ">', opts={"caption": name})
     else:
         if compression == "pkl":
             if isinstance(data, np.ndarray):
                 data = pickle.dumps(data.astype(np.float32).copy(order="C"))
             else:
                 data = pickle.dumps(data)
-        elif compression == 'gzip':
+        elif compression == "gzip":
             data = gzip.compress(data.astype(np.float32).copy(order="C"))
-        elif compression in ["glb", 'obj']: # meshes
+        elif compression in ["glb", "obj"]:  # meshes
             tm = data
-            if compression == 'glb':
+            if compression == "glb":
                 data = tm.export(file_type="glb")
                 print(f"Sending scene of {len(tm.triangles)} triangles")
             elif compression == "obj":
@@ -87,45 +80,32 @@ def send2server(
             },
         )
 
+
 def send_payload2server(
-    payload,
-    data_format,
-    size,
-    color,
-    layers,
-    t,
-    name="",
-    meta_data=None,
-    vis_conf=None,
-    shape="v",
-    compression='pkl'
+    payload, data_format, size, color, layers, t, name="", meta_data=None, vis_conf=None, shape="v", compression="pkl"
 ):
-    port=5001
-    if data_format == 'cam_img':
-       payload['image'] = img_to_base64(payload['image'])
-    if 'trs' in payload:
-       payload['trs'] = encode_to_base64(payload['trs'].astype(np.float32).copy(order="C"))
-        
-        
+    port = 5001
+    if data_format == "cam_img":
+        payload["image"] = img_to_base64(payload["image"])
+    if "trs" in payload:
+        payload["trs"] = encode_to_base64(payload["trs"].astype(np.float32).copy(order="C"))
+
     requests.post(
-            url=f"http://localhost:{port}/show_payload",
-            json={
-                "payload": encode_to_base64(pickle.dumps(payload)),
-                "compression": compression,
-                "data_format": data_format,
-                "size": size,
-                "color": color,
-                "layers": layers,
-                "t": t,
-                "graph_info": {"name": name},
-                "meta_data": meta_data,
-                "vis_conf": vis_conf,
-                "shape": shape,
-            },
-        )
-
-
-
+        url=f"http://localhost:{port}/show_payload",
+        json={
+            "payload": encode_to_base64(pickle.dumps(payload)),
+            "compression": compression,
+            "data_format": data_format,
+            "size": size,
+            "color": color,
+            "layers": layers,
+            "t": t,
+            "graph_info": {"name": name},
+            "meta_data": meta_data,
+            "vis_conf": vis_conf,
+            "shape": shape,
+        },
+    )
 
 
 def img_to_base64(image):

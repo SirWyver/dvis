@@ -7,7 +7,6 @@ Note:
 import numpy as np
 import torch
 from .dvis_client_old import (
-    send2server,
     sendMesh2server,
     send_clear,
     send_config,
@@ -28,12 +27,13 @@ from PIL import Image, ImageFile
 import os
 from pathlib import Path
 import matplotlib
+import base64
 
 import hashlib
 
 
 def int_hash(x):
-    return int(hashlib.sha1(x.encode("utf-8")).hexdigest(), 16) % (10 ** 8)
+    return int(hashlib.sha1(x.encode("utf-8")).hexdigest(), 16) % (10**8)
 
 
 def convert_to_nd(data):
@@ -70,9 +70,7 @@ def convert2std(data_np, fmt, bounds=None, c=0):
         else:
             ref_color = get_color(c) if c > 0 else 1
             return (
-                np.concatenate(
-                    [data_np[:, :3], ref_color * np.stack((data_np[:, 3], data_np[:, 3], data_np[:, 3]), -1)], 1
-                ),
+                np.concatenate([data_np[:, :3], ref_color * np.stack((data_np[:, 3], data_np[:, 3], data_np[:, 3]), -1)], 1),
                 "xyzrgb",
             )
     elif fmt == "xyzrgb":
@@ -368,7 +366,16 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
         data = np.array(data)
     if isinstance(data, str):
         fn = data
-        data = np.array(Image.open(data))
+        if data.endswith(".gif"):
+            # load image as base64 for visdom
+            data = open(data, "rb").read()
+            data = base64.encodestring(data).decode()
+            send2server(
+                data=data, data_format="gif", size=vs, color=c, layers=l, t=t, name=name, meta_data=meta, vis_conf=vis_conf
+            )
+            return
+        else:
+            data = np.array(Image.open(data))
         if meta is None:
             meta = {}
         meta["obj_path"] = fn
@@ -382,7 +389,7 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
 
     data = convert_to_nd(data)
     if data.max() <= 255:
-        if  (data.min()>=-1) and (data.min() < 0) and data.max()<=1:
+        if (data.min() >= -1) and (data.min() < 0) and data.max() <= 1:
             data = data * 0.5 + 0.5
         if data.max() <= 1:
             data = data * 255
@@ -392,11 +399,9 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
     if len(data.shape) == 2:  # intensity image
         data = np.tile(data[..., None], 3)
     elif len(data.shape) == 3:
-        if data.shape[0] == 3: # C,W,H
-            data = np.transpose(data,[1,2,0])
-    send2server(
-        data=data, data_format="img", size=vs, color=c, layers=l, t=t, name=name, meta_data=meta, vis_conf=vis_conf
-    )
+        if data.shape[0] == 3:  # C,W,H
+            data = np.transpose(data, [1, 2, 0])
+    send2server(data=data, data_format="img", size=vs, color=c, layers=l, t=t, name=name, meta_data=meta, vis_conf=vis_conf)
 
 
 def dvis_group(name, meta):
@@ -441,9 +446,7 @@ def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=Non
                 else:
                     ref_color = get_color(c) if c > 0 else 1
                     data, fmt = (
-                        np.concatenate(
-                            [data[:, :3], ref_color * np.stack((data[:, 3], data[:, 3], data[:, 3]), -1)], 1
-                        ),
+                        np.concatenate([data[:, :3], ref_color * np.stack((data[:, 3], data[:, 3], data[:, 3]), -1)], 1),
                         "xyzrgb",
                     )
         else:
@@ -467,7 +470,7 @@ def dvis_voxels(data, fmt="voxels", s=1, c=0, l=[0], t=None, name=None, meta=Non
 
     Args:
         data (np.ndarray, torch.Tensor): voxel grid data
-        fmt (str): voxels, cwhl, whlc, whl 
+        fmt (str): voxels, cwhl, whlc, whl
     """
     if name is None:
         name = "Voxels"
@@ -515,7 +518,7 @@ def dvis_box(data, fmt="box", s=1, c=0, l=[0], t=None, name=None, meta=None, ms=
         - bbox: Nx (x_min, y_min, z_min, x_max, y_max, z_max)
         - hbboxes: Nx (x, y, z, w, h, l, angle)
         - hbboxes_c: Nx (x, y, z, w, h, l, angle, c)
-        
+
     Example:
         dvis(np.array([[10,20,30,30,40,50,20,2]]),'hbboxes_c', s=20,c=-2, vis_conf={'transparent': True, 'opacity':0.3})
     """
@@ -635,7 +638,7 @@ def dvis_vec(data, s=1, c=0, l=[0], t=0, name="vec", meta=None, vis_conf=None):
 def dvis_line(data, s=1, c=0, l=[0], t=0, name="line", meta=None, vis_conf=None):
     """Display vector
     Args:
-        data (torch.Tensor, np.ndarray): Nx3 array of line vertices 
+        data (torch.Tensor, np.ndarray): Nx3 array of line vertices
     """
     if name is None:
         name = "line"
@@ -657,7 +660,7 @@ def dvis_line(data, s=1, c=0, l=[0], t=0, name="line", meta=None, vis_conf=None)
 def dvis_arrow(data, s=1, c=0, l=[0], t=0, name="arrow", meta=None, vis_conf=None):
     """Display arrow
     Args:
-        data (torch.Tensor, np.ndarray): 3x3 or 4x4 transformation matrix 
+        data (torch.Tensor, np.ndarray): 3x3 or 4x4 transformation matrix
     """
     if name is None:
         name = "arrow"
@@ -684,7 +687,7 @@ def dvis_arrow(data, s=1, c=0, l=[0], t=0, name="arrow", meta=None, vis_conf=Non
 def dvis_transform(data, s=1, c=0, l=[0], t=0, name="transform", meta=None, vis_conf=None):
     """Display transformation
     Args:
-        data (torch.Tensor, np.ndarray): 3x3 or 4x4 transformation matrix 
+        data (torch.Tensor, np.ndarray): 3x3 or 4x4 transformation matrix
     """
     if name is None:
         name = "transform"
@@ -723,7 +726,7 @@ def _infer_format(data):
         fmt = "img"
     elif isinstance(data, str):
         suffix = data.split(".")[-1]
-        if suffix in ["jpeg", "jpg", "png"]:
+        if suffix in ["jpeg", "jpg", "png", "gif"]:
             fmt = "img"
         elif suffix in ["obj", "fbx", "ply"]:
             fmt = "mesh"
@@ -791,7 +794,7 @@ def dvis_cam(data, name="RenderCam"):
     Args:
         data (dict): camera description as intrinsics or fov
         name (str): camera name
-    
+
     data:
         - near (float): 0.01  as default
         - far (float): 1000  as default
@@ -837,7 +840,7 @@ def dvis_cam_img(data, s=1, l=0, t=None, name="CamImg"):
 
     Args:
         data (dict, img_data): Image w/o camera data
-    
+
     data as dict:
         - image (np.ndarray, ImageFile): image data
         - cam_name (str): camera name
@@ -904,9 +907,9 @@ def dvis(
             - castShadows (bool): Mesh casts shadows?
             - receiveShadows (bool): Mesh receives shadows?
             - opacity (float): Material opacity (0-1)
-            - transparent (bool): Material transparent? 
+            - transparent (bool): Material transparent?
         shape (str, optional): [description]. Defaults to "v".
-    
+
     """
     if isinstance(l, int):
         l = [l]
