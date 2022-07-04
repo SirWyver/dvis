@@ -43,6 +43,12 @@ git clone git@github.com:SirWyver/dvis.git
 cd dvis
 pip install .
 ```
+Install the 3d web server (it's the easiest to have a separate conda env for it)
+```
+cd server
+conda env create -f environment.yml
+conda activate dvis_server
+```
 Start the 3d web server
 ```
 cd server
