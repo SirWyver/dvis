@@ -871,7 +871,8 @@ var Viewport = function (editor) {
 		scene.updateMatrixWorld();
 		// ADDED TRACKLIGHT
 
-		editor.tracklight.position.copy(editor.camera.position);
+		//editor.tracklight.position.copy(editor.camera.position);
+		editor.tracklight.position.copy(editor.viewportCamera.position);
 		renderer.render(scene, camera);
 
 		if (camera === editor.camera) {
