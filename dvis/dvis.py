@@ -61,7 +61,7 @@ def matplot2PIL(fig):
     return Image.open(buf)
 
 
-def convert2std(data_np, fmt, bounds=None, c=0):
+def convert2std(data_np, fmt, bounds=None, c=0, cm=None):
     if fmt == "cwhl":
         valid_indices = np.all((data_np >= 0) & (data_np <= 1), 0)
         return np.concatenate([np.argwhere(valid_indices), data_np[:, valid_indices].T], 1), "xyzrgb"
@@ -72,9 +72,9 @@ def convert2std(data_np, fmt, bounds=None, c=0):
         return np.argwhere(data_np == 1), "xyz"
     elif fmt == "xyzc":
         if np.any(data_np[:, 3] > 1) or np.all((data_np[:, 3] == 0) | (data_np[:, 3] == 1)):
-            return (np.concatenate([data_np[:, :3], np.array([get_color(x) for x in data_np[:, 3]])], 1), "xyzrgb")
+            return (np.concatenate([data_np[:, :3], np.array([get_color(x,cm) for x in data_np[:, 3]])], 1), "xyzrgb")
         else:
-            ref_color = get_color(c) if c > 0 else 1
+            ref_color = get_color(c, cm) if c > 0 else 1
             return (
                 np.concatenate([data_np[:, :3], ref_color * np.stack((data_np[:, 3], data_np[:, 3], data_np[:, 3]), -1)], 1),
                 "xyzrgb",
@@ -420,7 +420,7 @@ def dvis_group(name, meta):
     send2server(None, "group", vs=1, c=1, t=0, l=[0], add=False, name=name, meta=meta)
 
 
-def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=None, ms=None, vis_conf=None, shape="b"):
+def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=None, ms=None, vis_conf=None, shape="b", cm=None, sub_format=None):
     """Display points
 
     Args:
@@ -450,13 +450,13 @@ def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=Non
                 fmt = "xyz"
             elif data.shape[1] == 4:
                 # xyz c
-                if np.any(data[:, 3] > 1) or np.all((data[:, 3] == 0) | (data[:, 3] == 1)):
+                if cm is not None:
                     data, fmt = (
-                        np.concatenate([data[:, :3], np.array([get_color(x) for x in data[:, 3]])], 1),
+                        np.concatenate([data[:, :3], np.stack([get_color(x,cm) for x in data[:, 3]])], 1),
                         "xyzrgb",
                     )
                 else:
-                    ref_color = get_color(c) if c > 0 else 1
+                    ref_color = get_color(c,cm) if c > 0 else 1
                     data, fmt = (
                         np.concatenate([data[:, :3], ref_color * np.stack((data[:, 3], data[:, 3], data[:, 3]), -1)], 1),
                         "xyzrgb",
@@ -474,10 +474,10 @@ def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=Non
     if ms is not None and len(data) > ms:
         data = data[np.random.choice(len(data), ms, replace=False)]
 
-    send2server(data, fmt, s, c, l, t, name, meta, vis_conf, shape)
+    send2server(data, fmt, s, c, l, t, name, meta, vis_conf, shape, sub_format=sub_format)
 
 
-def dvis_voxels(data, fmt="voxels", s=1, c=0, l=[0], t=None, name=None, meta=None, ms=None, vis_conf=None, shape="v"):
+def dvis_voxels(data, fmt="voxels", s=1, c=0, l=[0], t=None, name=None, meta=None, ms=None, vis_conf=None, shape="v", cm=None):
     """Display voxels
 
     Args:
@@ -506,17 +506,19 @@ def dvis_voxels(data, fmt="voxels", s=1, c=0, l=[0], t=None, name=None, meta=Non
             raise IOError(f"Points format {data.shape} not understood")
 
     # convert to xyzrgb default format
-
+    sub_format = None
     if fmt == "cwhl":
         valid_indices = np.all((data >= 0) & (data <= 1), 0)
-        data.fmt = np.concatenate([np.argwhere(valid_indices), data[:, valid_indices].T], 1), "xyzrgb"
+        data, fmt = np.concatenate([np.argwhere(valid_indices), data[:, valid_indices].T], 1), "xyzrgb"
+        sub_format = "whlc"
     elif fmt == "whlc":
         valid_indices = np.all((data >= 0) & (data <= 1), -1)
         data, fmt = np.concatenate([np.argwhere(valid_indices), data[valid_indices]], 1), "xyzrgb"
+        sub_format = "whlc"
     elif fmt == "whl":
         data, fmt = np.argwhere(data == 1), "xyz"
 
-    dvis_points(data, fmt, s, c, l, t, name, meta, vis_conf, ms, shape)
+    dvis_points(data, fmt, s, c, l, t, name, meta, vis_conf, ms, shape, cm=cm, sub_format=sub_format)
 
 
 def dvis_box(data, fmt="box", s=1, c=0, l=[0], t=None, name=None, meta=None, ms=None, vis_conf=None, shape="v"):
@@ -969,9 +971,9 @@ def dvis(
         data, fmt = _infer_format(data)
 
     if fmt in ["points", "xyz", "xyzrgb", "xyzc"]:
-        dvis_points(data, fmt, s, c, l, t, name, meta, ms, vis_conf, shape)
+        dvis_points(data, fmt, s, c, l, t, name, meta, ms, vis_conf, shape, cm=kwargs.get("cm"))
     elif fmt in ["voxels", "whl", "whlc", "cwhl"]:
-        dvis_voxels(data, fmt, s, c, l, t, name, meta, ms, vis_conf, shape)
+        dvis_voxels(data, fmt, s, c, l, t, name, meta, ms, vis_conf, shape, cm=kwargs.get("cm"))
     elif fmt in ["box", "bbox", "hbboxes", "hbboxes_c", "corners"]:
         dvis_box(data, fmt, s, c, l, t, name, meta, ms, vis_conf, shape)
     elif fmt in ["mesh"]:

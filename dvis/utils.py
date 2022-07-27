@@ -1,12 +1,22 @@
 import numpy as np
 import cv2
 
-def get_color(color_code):
-    color_code = int(color_code)
-    if color_code >= 0:
-        return color_palette[color_code % len(color_palette)]
+
+def str2cmap(cm: str):
+    return cv2.__dict__[f"COLORMAP_{cm.upper()}"]
+
+def get_color(color_code, cm=None):
+    if cm is None:
+        # use default color palette
+        color_code = int(color_code)
+        if color_code >= 0:
+            return color_palette[color_code % len(color_palette)]
+        else:
+            return special_color_palette[(-color_code - 1) % len(special_color_palette)]
     else:
-        return special_color_palette[(-color_code - 1) % len(special_color_palette)]
+        # TODO: Replace cv2 dependencies
+        return cv2.applyColorMap(np.array(int(255*color_code),dtype=np.uint8), str2cmap(cm)).flatten()
+
 
 
 color_palette = (
@@ -74,8 +84,6 @@ special_color_palette = (
     / 255
 )
 
-def str2cmap(cm: str):
-    return cv2.__dict__[f"COLORMAP_{cm.upper()}"]
 
 def visualize_range(cont_label, img_ijs=None, H=None,W=None, cm="jet", mi=None, ma=None):
     """
