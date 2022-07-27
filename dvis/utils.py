@@ -1,5 +1,5 @@
 import numpy as np
-
+import cv2
 
 def get_color(color_code):
     color_code = int(color_code)
@@ -73,3 +73,65 @@ special_color_palette = (
     )
     / 255
 )
+
+def str2cmap(cm: str):
+    return cv2.__dict__[f"COLORMAP_{cm.upper()}"]
+
+def visualize_range(cont_label, img_ijs=None, H=None,W=None, cm="jet", mi=None, ma=None):
+    """
+    cont_label: (H, W) or (N,)
+    """
+    if cm is None:
+        # explicit no conversion
+        if len(cont_label.shape)==2:
+            cont_label = np.tile(cont_label[..., None], 3)
+        return cont_label
+
+    if H is None and W is None:
+        H, W = cont_label.shape
+    x =cont_label 
+    # convert invalid cont_label vals to 0
+    x[np.isinf(x)] = 0
+    x[np.isneginf(x)] = 0
+    if mi is None:
+        mi = np.min(x)  # get minimum cont_label 
+    if ma is None:
+        ma = np.max(x)
+    x = np.clip(x,mi,ma)
+    x = (x - mi) / max(ma - mi, 1e-8)  # normalize to 0~1
+    x = np.clip((255 * x).astype(np.uint8),0,255)
+    if img_ijs is not None:
+        cont_label_img = np.zeros((H, W), dtype=np.uint8)
+        cont_label_img[tuple(img_ijs.T)] = x
+        x = cont_label_img
+    x_ = cv2.applyColorMap(x, str2cmap(cm))
+    return x_
+
+
+def visualize_label(label, img_ijs=None, H=None,W=None, cm="default"):
+    """
+    label: (H, W) or (N,)
+    """
+    if cm is None:
+        # explicit no conversion
+        if len(label.shape)==2:
+            label = np.tile(label[..., None], 3)
+        return label
+    if H is None and W is None:
+        H, W = label.shape
+    x =label 
+    label_img = np.zeros((H, W, 3), dtype=np.uint8)
+    if cm == "default":
+        if img_ijs is not None:
+            label_img[tuple(img_ijs.T)] = color_palette[x % len(color_palette)]
+        else:
+            label_img = color_palette[x % len(color_palette)].reshape((H, W, 3))
+        label_img = label_img
+    else:
+        raise NotImplementedError("only default color palette supported atm")
+
+    return label_img 
+
+
+
+    

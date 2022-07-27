@@ -30,6 +30,14 @@ python examples/...
 ```
 
 
+# News
+* 0.84.0: Label and range image support, auto-format for img
+  ```
+  dvis(label_img [fmt='xyl']) # visualizses img of labels
+  dvis(depth_map [fmt='xyr', cm='jet']) # visualizes an image of continuous values using cv2 color map
+  dvis(heat_map [fmt='xyr', cm='hot']) 
+  ```
+
 # 🚀 Getting started
 
 Install the `dvis` package:

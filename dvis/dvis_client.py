@@ -16,11 +16,15 @@ def encode_to_base64(x):
     return base64.b64encode(x).decode("utf8")
 
 
-def send2server(data, data_format, size, color, layers, t, name="", meta_data=None, vis_conf=None, shape="v", compression="gzip"):
+def send2server(data, data_format, size, color, layers, t, name="", meta_data=None, vis_conf=None, shape="v", compression="gzip", sub_format=None):
     port = 5001
     if data is not None:
         if isinstance(data, np.ndarray):
-            print(f"Sending {data_format} with shape {data.shape}")
+            if sub_format is None:
+                print(f"Sending {data_format} with shape {data.shape}")
+            else:
+                print(f"Sending {data_format}[{sub_format}] with shape {data.shape}")
+
     else:
         print("Sending group")
     if data_format in ["hwc", "hist", "img"]:

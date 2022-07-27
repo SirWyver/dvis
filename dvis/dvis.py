@@ -21,7 +21,7 @@ from .dvis_client_old import (
 
 from .dvis_client import send2server, send_payload2server
 import trimesh
-from .utils import get_color
+from .utils import get_color, visualize_label, visualize_range
 import json
 from PIL import Image, ImageFile
 import os
@@ -43,6 +43,12 @@ def convert_to_nd(data):
         return np.array(data)
     if type(data) == torch.Tensor:
         return data.data.cpu().numpy()
+    try:
+        import imageio
+        if type(data) == imageio.core.util.Array:
+            return np.array(data)
+    except:
+        pass
     raise Exception("Data type not understood")
 
 
@@ -360,8 +366,7 @@ def dvis_mesh_pc(data, vs=1, c=0, l=0, t=None, name=None, meta=None, ms=None, vi
     )
 
 
-def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None):
-    # TODO INFER FORMAT
+def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None, cm='default', fmt='img', mi=None, ma=None):
     if isinstance(data, (ImageFile.ImageFile)):
         data = np.array(data)
     if isinstance(data, str):
@@ -386,8 +391,20 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
             data = np.array(matplot2PIL(data))
     except:
         pass
-
     data = convert_to_nd(data)
+    sub_format = None
+    if len(data.shape) == 3 and data.shape[0] == 3:  # C,W,H
+        data = np.transpose(data, [1, 2, 0])
+    if fmt == 'xyl':
+        # label image
+        data = visualize_label(data, cm=cm) 
+        sub_format = 'xyl'
+    elif fmt == 'xyr':
+        # range image with 
+        # remap default to jet
+        data = visualize_range(data, cm=("jet" if cm=='default' else cm), mi=mi, ma=ma)
+        sub_format = 'xyr'
+            
     if data.max() <= 255:
         if (data.min() >= -1) and (data.min() < 0) and data.max() <= 1:
             data = data * 0.5 + 0.5
@@ -396,12 +413,7 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
         data = data.astype(np.uint8)
     else:
         raise IOError("Image values cannot be interpreted")
-    if len(data.shape) == 2:  # intensity image
-        data = np.tile(data[..., None], 3)
-    elif len(data.shape) == 3:
-        if data.shape[0] == 3:  # C,W,H
-            data = np.transpose(data, [1, 2, 0])
-    send2server(data=data, data_format="img", size=vs, color=c, layers=l, t=t, name=name, meta_data=meta, vis_conf=vis_conf)
+    send2server(data=data, data_format="img", size=vs, color=c, layers=l, t=t, name=name, meta_data=meta, vis_conf=vis_conf, sub_format=sub_format)
 
 
 def dvis_group(name, meta):
@@ -749,7 +761,11 @@ def _infer_format(data):
             else:
                 raise IOError("Data format %s not understood" % str(data.shape))
         elif len(data.shape) == 3:
-            fmt = "voxels"
+            if data.shape[0] == 3 or data.shape[2] ==3:
+                # assume image for convenience
+                fmt = "img"
+            else:
+                fmt = "voxels"
         elif len(data.shape) == 2:
             if data.shape[1] == 6:
                 if data.shape[0] > 1:
@@ -779,6 +795,9 @@ def _infer_format(data):
                 fmt = "box"  #  "hbboxes"
             elif data.shape[1] == 8:
                 fmt = "box"  # "hbboxes_c"
+            elif data.shape[0] > 12  and data.shape[1] > 12:
+                # assume label img
+                fmt = "img"
             else:
                 raise IOError("Data format %s not understood" % str(data.shape))
         elif len(data.shape) == 1:
@@ -786,6 +805,25 @@ def _infer_format(data):
             fmt = "box"  # "bbox"
         else:
             raise IOError("Data format %s not understood" % str(data.shape))
+    # infer type of image
+    if fmt == 'img':
+        if len(data.shape) == 2 or (data.shape[-1]==1):
+            if isinstance(data, np.ndarray):
+                if data.dtype in [np.float32, np.float64]:
+                    # range type
+                    fmt = 'xyr'
+                else:
+                    # label type
+                    fmt = 'xyl'
+            elif isinstance(data, torch.Tensor):
+                if data.dtype in [torch.float, torch.double]:
+                    # range type
+                    fmt = 'xyr'
+                else:
+                    # label type
+                    fmt = 'xyl'
+
+
     return data, fmt
 
 
@@ -969,8 +1007,8 @@ def dvis(
         dvis_mesh_pc(data, vs, c, l, t, name, meta, ms, vis_conf, shape)
     elif fmt == "group":
         dvis_group(name, meta)
-    elif fmt == "img":
-        dvis_img(data, vs, c, l, t, name, meta, vis_conf)
+    elif fmt in ["img", 'xyl', 'xyr']:
+        dvis_img(data, vs, c, l, t, name, meta, vis_conf, fmt=fmt, cm=kwargs.get("cm",'default'), mi=kwargs.get('mi'), ma=kwargs.get('ma'))
     elif fmt == "hist":
         dvis_hist()
     else:
