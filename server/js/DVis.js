@@ -122,26 +122,54 @@ function _generate_voxel_mesh(data_arr, col_size, vox_size = 1, color = [0.3, 0.
         maxY = Math.max(y, maxY);
         maxZ = Math.max(z, maxZ);
 
-        if (col_size == 6) {
-
+        if (col_size == 7){
             inst_mesh.setColorAt(i, new THREE.Color(data_arr[i * col_size + 3], data_arr[i * col_size + 4], data_arr[i * col_size + 5]));
+            inst_mesh.setVisibleAt(i, new THREE.Color(data_arr[i * col_size + 6], 1.0, 1.0));
         }
         else {
-
-            inst_mesh.setColorAt(i, new THREE.Color(color[0], color[1], color[2]));
+            // debugging
+            inst_mesh.setVisibleAt(i, new THREE.Color(i/row_size,1.0, 1.0));
+            if (col_size == 6) {
+                inst_mesh.setColorAt(i, new THREE.Color(data_arr[i * col_size + 3], data_arr[i * col_size + 4], data_arr[i * col_size + 5]));
+            }
+            else {
+                inst_mesh.setColorAt(i, new THREE.Color(color[0], color[1], color[2]));
+            }
         }
         var mat = new THREE.Matrix4().setPosition(x, y, z);
         inst_mesh.setMatrixAt(i, mat);
 
     }
 
+    
+    // inst_mesh.instanceVisible = inst_mesh.instanceColor;
+    // console.log(inst_mesh.instanceVisible)
+    if (inst_mesh.instanceVisible !== null) 
+        inst_mesh.instanceVisible.needsUpdate =    true;
+
+    inst_mesh.frustumCulled = false;
 
     inst_mesh.frustumCulled = false;
     inst_mesh.extends = [minX, minY, minZ, maxX, maxY, maxZ];
     return inst_mesh;
 
 }
+var DVisUpdateMesh = function update_mesh(mesh){
+    console.log(mesh);
 
+    for (let i=0; i<mesh.instanceVisible.count; i++){
+        if (mesh.instanceVisible.getX(i) < mesh.min_value){
+            mesh.setVisibleMaskAt(i,0.0);
+        }
+        else{
+            mesh.setVisibleMaskAt(i,1.0);
+        }
+    }
+    mesh.instanceVisible.needsUpdate = true;
+    mesh.instanceColor.needsUpdate = true;
+    mesh.instanceMatrix.needsUpdate = true;
+
+}
 
 function _generate_voxel_mesh2(data_arr, col_size, vox_size = 1, color = [0.3, 0.2, 0.5], shape = 'v') {
     var row_size = data_arr.length / col_size;
@@ -370,7 +398,6 @@ function _generate_vecs(data_arr, size, color) {
         inst_mesh.setMatrixAt(i, trans_mat);
 
     }
-    inst_mesh.frustumCulled = false;
 
     return inst_mesh;
 }
@@ -500,6 +527,7 @@ var DVisAddMesh = function (data, compression, name, layers = [0], t = [0], meta
 
 
 }
+
 
 
 var DVisCmd = function (cmd_data) {
@@ -823,4 +851,4 @@ var DVisLoad = function (file_str) {
     createFile();
 }
 
-export { DVisAdd, DVisAddMesh, DVisAddPayload, DVisLoad, DVisClear, DVisAddCamera, DVisCmd, DVisAddCameraImage }
+export { DVisAdd, DVisAddMesh, DVisAddPayload, DVisLoad, DVisClear, DVisAddCamera, DVisCmd, DVisAddCameraImage, DVisUpdateMesh }

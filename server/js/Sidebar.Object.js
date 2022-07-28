@@ -14,6 +14,8 @@ import { SetRotationCommand } from './commands/SetRotationCommand.js';
 import { SetScaleCommand } from './commands/SetScaleCommand.js';
 import { SetColorCommand } from './commands/SetColorCommand.js';
 
+import { DVisUpdateMesh } from './DVis.js';
+
 var SidebarObject = function (editor) {
 
 	var strings = editor.strings;
@@ -443,7 +445,18 @@ var SidebarObject = function (editor) {
 
 
 	container.add(objectLayerRow);
+	
+	var objectAppearanceRow = new UIRow();
 
+	objectAppearanceRow.add(new UIText('Appearance').setWidth('90px'));
+	objectAppearanceRow.add(new UIHorizontalRule())
+	objectAppearanceRow.add(new UIText("Opacity").setWidth('90px'));
+	var objectOpacity = new UINumber(1.0).setRange(0, 1.0).onChange(update);
+	objectAppearanceRow.add(objectOpacity);
+	objectAppearanceRow.add(new UIText("MinVal").setWidth('90px'));
+	var objectMinVal = new UINumber(0.0).setRange(0, 1.0).onChange(update);
+	objectAppearanceRow.add(objectMinVal);
+	container.add(objectAppearanceRow)
 	// user data
 
 	var objectUserDataRow = new UIRow();
@@ -698,6 +711,26 @@ var SidebarObject = function (editor) {
 
 				}
 
+			}
+
+			if (object.shadow !== undefined) {
+
+				if (object.shadow.radius !== objectShadowRadius.getValue()) {
+
+					editor.execute(new SetValueCommand(editor, object.shadow, 'radius', objectShadowRadius.getValue()));
+
+				}
+
+			}
+
+			if (object.material.opacity !== objectOpacity.getValue()) {
+				object.material.opacity = objectOpacity.getValue();
+				object.material.transparent = true;
+			}
+
+			if (object.min_value !== objectMinVal.getValue()) {
+				object.min_value = objectMinVal.getValue();
+				DVisUpdateMesh(object)
 			}
 
 			try {
