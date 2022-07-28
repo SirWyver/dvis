@@ -128,8 +128,6 @@ function _generate_voxel_mesh(data_arr, col_size, vox_size = 1, color = [0.3, 0.
             inst_mesh.setVisibleAt(i, new THREE.Color(data_arr[i * col_size + 6], 1.0, 1.0));
         }
         else {
-            // debugging
-            inst_mesh.setVisibleAt(i, new THREE.Color(i/row_size,i%2, 1.0));
             if (col_size == 6) {
                 inst_mesh.setColorAt(i, new THREE.Color(data_arr[i * col_size + 3], data_arr[i * col_size + 4], data_arr[i * col_size + 5]));
             }
