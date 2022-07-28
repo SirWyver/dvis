@@ -1,3 +1,5 @@
+from turtle import color
+from importlib_metadata import unique_everseen
 import numpy as np
 import cv2
 
@@ -16,6 +18,22 @@ def get_color(color_code, cm=None):
     else:
         # TODO: Replace cv2 dependencies
         return cv2.applyColorMap(np.array(int(255*color_code),dtype=np.uint8), str2cmap(cm)).flatten()
+
+def get_color_batched(col_vals, cm=None):
+    colored_batch = np.zeros((len(col_vals),3))
+    if cm is None:
+        # use default color palette
+        col_vals = col_vals.dtype(np.int32)
+        unique_cvals, unique_inds = np.unique(col_vals)
+        for uq_cval in unique_cvals:
+            if uq_cval >= 0:
+                colored_batch[col_vals == uq_cval] = color_palette[uq_cval%len(color_palette)]
+            else:
+                colored_batch[col_vals == uq_cval] = special_color_palette[(-uq_cval - 1) % len(special_color_palette)]
+    else:
+        # convert it into a 
+        colored_batch = cv2.applyColorMap((255*col_vals).astype(np.uint8), str2cmap(cm))[:,0]
+    return colored_batch
 
 
 

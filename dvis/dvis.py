@@ -21,7 +21,7 @@ from .dvis_client_old import (
 
 from .dvis_client import send2server, send_payload2server
 import trimesh
-from .utils import get_color, visualize_label, visualize_range
+from .utils import get_color, visualize_label, visualize_range, get_color_batched
 import json
 from PIL import Image, ImageFile
 import os
@@ -445,6 +445,8 @@ def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=Non
                 if data.shape[0] > 1:
                     # xyz rgb
                     fmt = "xyzrgb"
+            elif data.shape[1] == 7:
+                fmt = "xyzrgba"
             elif data.shape[1] == 3:
                 # xyz
                 fmt = "xyz"
@@ -452,8 +454,8 @@ def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=Non
                 # xyz c
                 if cm is not None:
                     data, fmt = (
-                        np.concatenate([data[:, :3], np.stack([get_color(x,cm) for x in data[:, 3]])], 1),
-                        "xyzrgb",
+                        np.concatenate([data[:, :3], get_color_batched(data[:, 3],cm)], 1),
+                        "xyzrgb"
                     )
                 else:
                     ref_color = get_color(c,cm) if c > 0 else 1
@@ -464,7 +466,7 @@ def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=Non
         else:
             raise IOError(f"Points format {data.shape} not understood")
 
-    if fmt == "xyzrgb":
+    if fmt in ["xyzrgb", "xyzrgba"]:
         if np.any(data[:, 3:6] > 1) and np.all(data[:, 3:6] == data[:, 3:6].astype(np.int)):
             ## color as uint 8
             data = data.astype(np.float32)
@@ -794,7 +796,7 @@ def _infer_format(data):
             elif data.shape[1] == 5:
                 fmt = "poinst2d"  #  "uvrgb"
             elif data.shape[1] == 7:
-                fmt = "box"  #  "hbboxes"
+                fmt = "xyzrgba"  # changed from bbox #  "hbboxes"
             elif data.shape[1] == 8:
                 fmt = "box"  # "hbboxes_c"
             elif data.shape[0] > 12  and data.shape[1] > 12:
@@ -970,7 +972,7 @@ def dvis(
     if fmt is None:
         data, fmt = _infer_format(data)
 
-    if fmt in ["points", "xyz", "xyzrgb", "xyzc"]:
+    if fmt in ["points", "xyz", "xyzrgb", "xyzc", "xyzrgba"]:
         dvis_points(data, fmt, s, c, l, t, name, meta, ms, vis_conf, shape, cm=kwargs.get("cm"))
     elif fmt in ["voxels", "whl", "whlc", "cwhl"]:
         dvis_voxels(data, fmt, s, c, l, t, name, meta, ms, vis_conf, shape, cm=kwargs.get("cm"))

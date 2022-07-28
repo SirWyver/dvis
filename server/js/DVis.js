@@ -78,6 +78,7 @@ function get_color(color_code) {
 
 function _generate_voxel_mesh(data_arr, col_size, vox_size = 1, color = [0.3, 0.2, 0.5], shape = 'v') {
     var row_size = data_arr.length / col_size;
+    console.log(col_size)
     if (shape === 'v') {
         var geo = new THREE.BoxBufferGeometry(vox_size * 0.95, vox_size * 0.95, vox_size * 0.95);
         geo = geo.toNonIndexed();
@@ -128,7 +129,7 @@ function _generate_voxel_mesh(data_arr, col_size, vox_size = 1, color = [0.3, 0.
         }
         else {
             // debugging
-            inst_mesh.setVisibleAt(i, new THREE.Color(i/row_size,1.0, 1.0));
+            inst_mesh.setVisibleAt(i, new THREE.Color(i/row_size,i%2, 1.0));
             if (col_size == 6) {
                 inst_mesh.setColorAt(i, new THREE.Color(data_arr[i * col_size + 3], data_arr[i * col_size + 4], data_arr[i * col_size + 5]));
             }
@@ -155,10 +156,8 @@ function _generate_voxel_mesh(data_arr, col_size, vox_size = 1, color = [0.3, 0.
 
 }
 var DVisUpdateMesh = function update_mesh(mesh){
-    console.log(mesh);
-
     for (let i=0; i<mesh.instanceVisible.count; i++){
-        if (mesh.instanceVisible.getX(i) < mesh.min_value){
+        if (mesh.instanceVisible.getX(i) <= mesh.min_value){
             mesh.setVisibleMaskAt(i,0.0);
         }
         else{
@@ -438,6 +437,9 @@ function generate_object(data, data_format, size = 1, color_code = 1, shape = 'v
     var color = get_color(color_code);
     if (size == null) {
         size = 1;
+    }
+    if (data_format == 'xyzrgba') {
+        return _generate_voxel_mesh(data_arr, 7, size, color, shape);
     }
     if (data_format == 'xyzrgb') {
         return _generate_voxel_mesh(data_arr, 6, size, color, shape);
