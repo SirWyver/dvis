@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="dvis",
-    version="0.8.5.0",
+    version="0.8.5.1",
     author="Norman Müller",
     author_email="norman.mueller@tum.de",
     url="https://github.com/SirWyver/dvis",
@@ -31,5 +31,6 @@ setuptools.setup(
         "simple-websocket==0.2.0",
         "python-socketio==4.6.1",
         "eventlet",
+        "fabric"
     ],
 )

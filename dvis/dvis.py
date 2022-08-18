@@ -4,6 +4,7 @@ Client side bridge to send various type of 2D and 3D to the server.
 Note:
     Requires DVIS server to run - sends data via websocket to localhost:5001 (3D visualizations) and localhost:4999 (using visdom for 2D visualization).
 """
+import shutil
 import numpy as np
 import torch
 from .dvis_client_old import (
@@ -380,7 +381,16 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
             )
             return
         else:
-            data = np.array(Image.open(data))
+            if ":" in fn:
+                # remote path
+                from fabric import Connection
+                hostname, remote_path, suffix = fn.split(":")[0], fn.split(":")[1], fn.split('.')[-1]
+                fn =f"tmp.{suffix}" 
+                Connection(hostname).get(remote_path,fn)
+                data = np.array(Image.open(fn))
+                os.remove(fn)
+            else:
+                data = np.array(Image.open(fn))
         if meta is None:
             meta = {}
         meta["obj_path"] = fn
@@ -810,7 +820,7 @@ def _infer_format(data):
         else:
             raise IOError("Data format %s not understood" % str(data.shape))
     # infer type of image
-    if fmt == 'img':
+    if fmt == 'img' and not isinstance(data, str):
         if len(data.shape) == 2 or (data.shape[-1]==1):
             if isinstance(data, np.ndarray):
                 if data.dtype in [np.float32, np.float64]:
