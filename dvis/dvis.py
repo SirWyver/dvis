@@ -435,7 +435,7 @@ def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=Non
 
     Args:
         data (np.ndarray, torch.Tensor): point cloud data
-        fmt (str): points, xyzrgb, xyz, xyzc
+        fmt (str): points, xyzrgb, xyz, xyzc, xyzr
     """
     if name is None:
         name = "Points"
@@ -461,18 +461,14 @@ def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=Non
                 # xyz
                 fmt = "xyz"
             elif data.shape[1] == 4:
-                # xyz c
-                if cm is not None:
-                    data, fmt = (
-                        np.concatenate([data[:, :3], get_color_batched(data[:, 3],cm)], 1),
-                        "xyzrgb"
-                    )
+                if np.abs(data[:,3].astype(np.int) -  data[:,3]).max()<1e-3:
+                    # xyzl
+                    label_colors = visualize_label(data[:,3],cm=cm if cm is not None else "default")
+                    data, fmt = np.concatenate([data[:, :3],label_colors], 1), "xyzrgb"
                 else:
-                    ref_color = get_color(c,cm) if c > 0 else 1
-                    data, fmt = (
-                        np.concatenate([data[:, :3], ref_color * np.stack((data[:, 3], data[:, 3], data[:, 3]), -1)], 1),
-                        "xyzrgb",
-                    )
+                    # xyzr
+                    range_colors = visualize_range(data[:,3],cm=cm if cm is not None else "jet")[:,0]
+                    data, fmt = np.concatenate([data[:, :3],range_colors, data[:,3:4]], 1), "xyzrgba"
         else:
             raise IOError(f"Points format {data.shape} not understood")
 
@@ -836,7 +832,8 @@ def _infer_format(data):
                 else:
                     # label type
                     fmt = 'xyl'
-
+                            
+            
 
     return data, fmt
 
@@ -982,7 +979,7 @@ def dvis(
     if fmt is None:
         data, fmt = _infer_format(data)
 
-    if fmt in ["points", "xyz", "xyzrgb", "xyzc", "xyzrgba"]:
+    if fmt in ["points", "xyz", "xyzrgb", "xyzr", "xyzl", "xyzc", "xyzrgba"]:
         dvis_points(data, fmt, s, c, l, t, name, meta, ms, vis_conf, shape, cm=kwargs.get("cm"))
     elif fmt in ["voxels", "whl", "whlc", "cwhl"]:
         dvis_voxels(data, fmt, s, c, l, t, name, meta, ms, vis_conf, shape, cm=kwargs.get("cm"))
