@@ -16,11 +16,11 @@ var Editor = function () {
 
 	this.DEFAULT_CAMERA = new THREE.PerspectiveCamera(50, 1, 0.01, 10000);
 	this.DEFAULT_CAMERA.name = 'Camera';
-	this.DEFAULT_CAMERA.position.set(0, 5, 10);
+	this.DEFAULT_CAMERA.position.set(0, 5, -10);
 	this.DEFAULT_CAMERA.lookAt(new THREE.Vector3());
 
 	var Signal = signals.Signal;
-	THREE.Object3D.DefaultUp.set(0, 0, -1);
+	THREE.Object3D.DefaultUp.set(0, 0, 0);
 	this.signals = {
 
 		// script

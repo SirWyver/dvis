@@ -8,6 +8,7 @@ import cmapy
 def str2cmap(cm: str):
     return cv2.__dict__[f"COLORMAP_{cm.upper()}"]
 
+
 def get_color(color_code, cm=None):
     if cm is None:
         # use default color palette
@@ -18,25 +19,26 @@ def get_color(color_code, cm=None):
             return special_color_palette[(-color_code - 1) % len(special_color_palette)]
     else:
 
-        return cv2.applyColorMap(np.array(int(255*color_code),dtype=np.uint8), str2cmap(cm)).flatten()
+        return cv2.applyColorMap(np.array(int(255*color_code), dtype=np.uint8), str2cmap(cm)).flatten()
+
 
 def get_color_batched(col_vals, cm=None):
-    colored_batch = np.zeros((len(col_vals),3))
-    if cm is None:
-        print("lel")
+    colored_batch = np.zeros((len(col_vals), 3))
+    if cm is None or cm == 'default':
         # use default color palette
-        col_vals = col_vals.dtype(np.int32)
-        unique_cvals, unique_inds = np.unique(col_vals)
+        col_vals = col_vals.astype(np.int32)
+        unique_cvals = np.unique(col_vals)
         for uq_cval in unique_cvals:
             if uq_cval >= 0:
-                colored_batch[col_vals == uq_cval] = color_palette[uq_cval%len(color_palette)]
+                colored_batch[col_vals == uq_cval] = color_palette[uq_cval % len(
+                    color_palette)]
             else:
-                colored_batch[col_vals == uq_cval] = special_color_palette[(-uq_cval - 1) % len(special_color_palette)]
+                colored_batch[col_vals == uq_cval] = special_color_palette[(
+                    -uq_cval - 1) % len(special_color_palette)]
     else:
-        colored_batch = cv2.applyColorMap((255*col_vals).astype(np.uint8), str2cmap(cm))[:,0]
+        colored_batch = cv2.applyColorMap(
+            (255*col_vals).astype(np.uint8), str2cmap(cm))[:, 0]
     return colored_batch
-
-
 
 
 color_palette = (
@@ -105,71 +107,65 @@ special_color_palette = (
 )
 
 
-def visualize_range(cont_label, img_ijs=None, H=None,W=None, cm="jet", mi=None, ma=None):
+def visualize_range(cont_label, img_ijs=None, H=None, W=None, cm="jet", mi=None, ma=None):
     """
     cont_label: (H, W) or (N,)
     """
     if cm is None:
         # explicit no conversion
-        if len(cont_label.shape)==2:
+        if len(cont_label.shape) == 2:
             cont_label = np.tile(cont_label[..., None], 3)
         return cont_label
 
-    if H is None and W is None and cont_label.shape==2:
+    if H is None and W is None and cont_label.shape == 2:
         H, W = cont_label.shape
-    x =cont_label 
+    x = cont_label
     # convert invalid cont_label vals to 0
     x[np.isinf(x)] = 0
     x[np.isneginf(x)] = 0
     use_auto_range = ((mi is None) or (ma is None))
     if mi is None:
-        mi = np.min(x)  # get minimum cont_label 
+        mi = np.min(x)  # get minimum cont_label
     if ma is None:
         ma = np.max(x)
 
-    if use_auto_range and (mi>=0 and ma<=1):
+    if use_auto_range and (mi >= 0 and ma <= 1):
         mi, ma = 0.0, 1.0
     print(f"Set range: {mi} - {ma}")
-    x = np.clip(x,mi,ma)
+    x = np.clip(x, mi, ma)
     x = (x - mi) / max(ma - mi, 1e-8)  # normalize to 0~1
-    x = np.clip((255 * x).astype(np.uint8),0,255)
+    x = np.clip((255 * x).astype(np.uint8), 0, 255)
     if img_ijs is not None:
         cont_label_img = np.zeros((H, W), dtype=np.uint8)
         cont_label_img[tuple(img_ijs.T)] = x
         x = cont_label_img
-    
+
     x_ = cv2.applyColorMap(255-x, str2cmap(cm))
     return x_
 
 
-def visualize_label(label, img_ijs=None, H=None,W=None, cm="default"):
+def visualize_label(label, img_ijs=None, H=None, W=None, cm="default"):
     """
     label: (H, W) or (N,)
     """
     if cm is None:
         # explicit no conversion
-        if len(label.shape)==2:
+        if len(label.shape) == 2:
             label = np.tile(label[..., None], 3)
         return label
-    is_img = img_ijs is not None or len(label.shape)==2
-    if is_img and H is None and W is None :
+    is_img = img_ijs is not None or len(label.shape) == 2
+    if is_img and H is None and W is None:
         H, W = label.shape
         label_img = np.zeros((H, W, 3), dtype=np.uint8)
-    x =label 
-    if cm is None or cm == "default":
-        if is_img:
-            if img_ijs is not None:
-                label_img[tuple(img_ijs.T)] = color_palette[x % len(color_palette)]
-            else:
-                label_img = color_palette[x % len(color_palette)].reshape((H, W, 3))
+    x = label
+    if is_img:
+        if img_ijs is not None:
+            label_img[tuple(img_ijs.T)] = color_palette[x %
+                                                        len(color_palette)]
         else:
-            label_img = color_palette[x % len(color_palette)]
-
+            label_img = color_palette[x %
+                                        len(color_palette)].reshape((H, W, 3))
     else:
-        raise NotImplementedError("only default color palette supported atm")
+        label_img = get_color_batched(x, cm)
 
-    return label_img 
-
-
-
-    
+    return label_img
