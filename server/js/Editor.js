@@ -316,14 +316,20 @@ Editor.prototype = {
 
 		if (object.name.includes('/')) {
 			var grouping = object.name.split('/');
+			console.log(grouping)
 			var parent_name = grouping.slice(0)[0];
-			var p = this.scene.getObjectByName(parent_name);
+			if (parent != undefined){
+				var p = parent.getChildByName(parent_name)
+			}
+			else{
+				var p = this.scene.getObjectByName(parent_name);
+			}
 			object.name = grouping.slice(1,).join('/');
-			console.log('parent_name' + parent_name);
-			console.log('object.name' + object.name);
+			// console.log('parent_name ' + parent_name);
+			// console.log('object.name ' + object.name);
 			if (p != undefined) {
 				//parent exist
-				return this.addObject(object, p);
+				return this.addObject(object, p,layers);
 			}
 			else {
 				//new parent
