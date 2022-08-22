@@ -440,6 +440,7 @@ def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=Non
     if name is None:
         name = "Points"
     data = convert_to_nd(data)
+
     if fmt == "points":
         # infer data format based on data shape
         if len(data.shape) == 4:
@@ -463,14 +464,20 @@ def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=Non
             elif data.shape[1] == 4:
                 if np.abs(data[:,3].astype(np.int) -  data[:,3]).max()<1e-3:
                     # xyzl
-                    label_colors = visualize_label(data[:,3],cm=cm if cm is not None else "default")
-                    data, fmt = np.concatenate([data[:, :3],label_colors], 1), "xyzrgb"
+                    fmt = "xyzl"
                 else:
                     # xyzr
-                    range_colors = visualize_range(data[:,3],cm=cm if cm is not None else "jet")[:,0]
-                    data, fmt = np.concatenate([data[:, :3],range_colors, data[:,3:4]], 1), "xyzrgba"
+                    fmt = "xyzr"
         else:
             raise IOError(f"Points format {data.shape} not understood")
+
+    if fmt =="xyzl":
+        label_colors = visualize_label(data[:,3],cm=cm if cm is not None else "default")
+        data, fmt = np.concatenate([data[:, :3],label_colors], 1), "xyzrgb"
+
+    if fmt == "xyzr":
+        range_colors = visualize_range(data[:,3],cm=cm if cm is not None else "jet")[:,0]
+        data, fmt = np.concatenate([data[:, :3],range_colors, data[:,3:4]], 1), "xyzrgba"
 
     if fmt in ["xyzrgb", "xyzrgba"]:
         if np.any(data[:, 3:6] > 1) and np.all(data[:, 3:6] == data[:, 3:6].astype(np.int)):

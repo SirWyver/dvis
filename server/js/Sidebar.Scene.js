@@ -19,13 +19,41 @@ var SidebarScene = function (editor) {
 
 	// outliner
 
+	var nodeStates = new WeakMap();
 
+	function buildOption( object, draggable ) {
 
-	function buildOption(object, draggable, selectVisible = false) {
-		var option = document.createElement('div');
-		option.innerHTML = buildHTML(object);
+		var option = document.createElement( 'div' );
 		option.draggable = draggable;
+		option.innerHTML = buildHTML( object );
 		option.value = object.id;
+
+		// opener
+
+		if ( nodeStates.has( object ) ) {
+
+			var state = nodeStates.get( object );
+
+			var opener = document.createElement( 'span' );
+			opener.classList.add( 'opener' );
+
+			if ( object.children.length > 0 ) {
+
+				opener.classList.add( state ? 'open' : 'closed' );
+
+			}
+
+			opener.addEventListener( 'click', function () {
+
+				nodeStates.set( object, nodeStates.get( object ) === false ); // toggle
+				refreshUI();
+
+			}, false );
+
+			option.insertBefore( opener, option.firstChild );
+
+		}
+
 		return option;
 
 	}
@@ -65,15 +93,15 @@ var SidebarScene = function (editor) {
 
 	function buildHTML(object) {
 
-		var html = '<div >' + '<span class="type ' + object.type + ' style="width:60px"></span> ' + escapeHTML(object.name);
+		var html = `<span class="type ${ object.type }"></span> ${ escapeHTML( object.name ) }`;
 
 		if (object.isMesh) {
 
 			var geometry = object.geometry;
 			var material = object.material;
 
-			html += ' <span class="type ' + geometry.type + '"></span> ' + escapeHTML(geometry.name);
-			html += ' <span class="type ' + material.type + '"></span> ' + escapeHTML(getMaterialName(material));
+			html += ` <span class="type ${ geometry.type }"></span> ${ escapeHTML( geometry.name ) }`;
+			html += ` <span class="type ${ material.type }"></span> ${ escapeHTML( getMaterialName( material ) ) }`;
 			//html += ' <script> var setVisible= function(uuid) {console.log(uuid);} </script> <input class="Checkbox" type="checkbox" onChange="setVisible(this.uuid)" uuid=' + object.uuid + ' checked></input> ';
 
 		}
@@ -481,18 +509,26 @@ var SidebarScene = function (editor) {
 			for (var i = 0, l = objects.length; i < l; i += 1) {
 
 				var object = objects[i];
-				if (object.host !== undefined) continue;
+				if ( nodeStates.has( object ) === false ) {
 
-				var option = buildOption(object, true, true);
-				option.style.paddingLeft = (pad * 10) + 'px';
+					nodeStates.set( object, false );
+
+				}
+
+				var option = buildOption(object, true);
+				option.style.paddingLeft = (pad * 15) + 'px';
 
 				options.push(option);
 
-				addObjects(object.children, pad + 1);
+				if ( nodeStates.get( object ) === true ) {
+
+					addObjects( object.children, pad + 1 );
+
+				}
 
 			}
 
-		})(scene.children, 1);
+		})(scene.children, 0);
 
 		outliner.setOptions(options);
 
@@ -620,7 +656,33 @@ var SidebarScene = function (editor) {
 
 		if (ignoreObjectSelectedSignal === true) return;
 
-		outliner.setValue(object !== null ? object.id : null);
+		if ( object !== null ) {
+
+			let needsRefresh = false;
+			let parent = object.parent;
+
+			while ( parent !== editor.scene ) {
+
+				if ( nodeStates.get( parent ) !== true ) {
+
+					nodeStates.set( parent, true );
+					needsRefresh = true;
+
+				}
+
+				parent = parent.parent;
+
+			}
+
+			if ( needsRefresh ) refreshUI();
+
+			outliner.setValue( object.id );
+
+		} else {
+
+			outliner.setValue( null );
+
+		}
 
 	});
 

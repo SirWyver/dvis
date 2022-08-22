@@ -316,10 +316,9 @@ Editor.prototype = {
 
 		if (object.name.includes('/')) {
 			var grouping = object.name.split('/');
-			console.log(grouping)
 			var parent_name = grouping.slice(0)[0];
 			if (parent != undefined){
-				var p = parent.getChildByName(parent_name)
+				var p = parent.getObjectByName(parent_name)
 			}
 			else{
 				var p = this.scene.getObjectByName(parent_name);

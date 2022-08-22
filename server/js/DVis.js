@@ -78,7 +78,6 @@ function get_color(color_code) {
 
 function _generate_voxel_mesh(data_arr, col_size, vox_size = 1, color = [0.3, 0.2, 0.5], shape = 'v') {
     var row_size = data_arr.length / col_size;
-    console.log(col_size)
     if (shape === 'v') {
         var geo = new THREE.BoxBufferGeometry(vox_size * 0.95, vox_size * 0.95, vox_size * 0.95);
         geo = geo.toNonIndexed();
