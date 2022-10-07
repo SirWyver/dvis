@@ -843,8 +843,8 @@ var Viewport = function (editor) {
 	var clock = new THREE.Clock(); // only used for animations
 
 	function animate() {
-
-		requestAnimationFrame(animate);
+		return;
+		//requestAnimationFrame(animate);
 
 		var mixer = editor.mixer;
 

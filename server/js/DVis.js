@@ -122,7 +122,7 @@ function _generate_voxel_mesh(data_arr, col_size, vox_size = 1, color = [0.3, 0.
         maxY = Math.max(y, maxY);
         maxZ = Math.max(z, maxZ);
 
-        if (col_size == 7){
+        if (col_size == 7) {
             inst_mesh.setColorAt(i, new THREE.Color(data_arr[i * col_size + 3], data_arr[i * col_size + 4], data_arr[i * col_size + 5]));
             inst_mesh.setVisibleAt(i, new THREE.Color(data_arr[i * col_size + 6], 1.0, 1.0));
         }
@@ -139,11 +139,11 @@ function _generate_voxel_mesh(data_arr, col_size, vox_size = 1, color = [0.3, 0.
 
     }
 
-    
+
     // inst_mesh.instanceVisible = inst_mesh.instanceColor;
     // console.log(inst_mesh.instanceVisible)
-    if (inst_mesh.instanceVisible !== null) 
-        inst_mesh.instanceVisible.needsUpdate =    true;
+    if (inst_mesh.instanceVisible !== null)
+        inst_mesh.instanceVisible.needsUpdate = true;
 
     inst_mesh.frustumCulled = false;
 
@@ -152,13 +152,13 @@ function _generate_voxel_mesh(data_arr, col_size, vox_size = 1, color = [0.3, 0.
     return inst_mesh;
 
 }
-var DVisUpdateMesh = function update_mesh(mesh){
-    for (let i=0; i<mesh.instanceVisible.count; i++){
-        if (mesh.instanceVisible.getX(i) <= mesh.min_value){
-            mesh.setVisibleMaskAt(i,0.0);
+var DVisUpdateMesh = function update_mesh(mesh) {
+    for (let i = 0; i < mesh.instanceVisible.count; i++) {
+        if (mesh.instanceVisible.getX(i) <= mesh.min_value) {
+            mesh.setVisibleMaskAt(i, 0.0);
         }
-        else{
-            mesh.setVisibleMaskAt(i,1.0);
+        else {
+            mesh.setVisibleMaskAt(i, 1.0);
         }
     }
     mesh.instanceVisible.needsUpdate = true;

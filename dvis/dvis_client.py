@@ -27,10 +27,13 @@ def send2server(data, data_format, size, color, layers, t, name="", meta_data=No
 
     else:
         print("Sending group")
-    if data_format in ["hwc", "hist", "img"]:
+    if data_format in ["hwc", "hist", "img", "seq"]:
         vis = visdom.Visdom(port=4999)
         if data_format == "hist":
             vis.histogram(data.flatten())
+        elif data_format == "seq":
+            for img in data:
+                vis.image(img, opts=dict(store_history=True), win=name)
         else:
             if isinstance(color, int):
                 pass

@@ -445,7 +445,7 @@ var SidebarObject = function (editor) {
 
 
 	container.add(objectLayerRow);
-	
+
 	var objectAppearanceRow = new UIRow();
 
 	objectAppearanceRow.add(new UIText('Appearance').setWidth('90px'));
@@ -722,18 +722,21 @@ var SidebarObject = function (editor) {
 				}
 
 			}
-
-			if (object.material.opacity !== objectOpacity.getValue()) {
-				object.material.opacity = objectOpacity.getValue();
-				object.material.transparent = true;
-				editor.signals.rendererUpdated.dispatch();
+			if (object.material !== undefined) {
+				if (object.material.opacity !== objectOpacity.getValue()) {
+					object.material.opacity = objectOpacity.getValue();
+					object.material.transparent = true;
+					editor.signals.rendererUpdated.dispatch();
+				}
+				if (object.min_value !== objectMinVal.getValue()) {
+					object.min_value = objectMinVal.getValue();
+					DVisUpdateMesh(object)
+					editor.signals.rendererUpdated.dispatch();
+				}
 			}
 
-			if (object.min_value !== objectMinVal.getValue()) {
-				object.min_value = objectMinVal.getValue();
-				DVisUpdateMesh(object)
-				editor.signals.rendererUpdated.dispatch();
-			}
+
+
 
 			try {
 

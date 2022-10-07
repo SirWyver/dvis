@@ -38,6 +38,9 @@ def int_hash(x):
 
 
 def convert_to_nd(data):
+    if type(data) == list:
+        # convert to array
+        return np.stack([convert_to_nd(x) for x in data])
     if type(data) == np.ndarray:
         return data
     if type(data) == list:
@@ -739,6 +742,27 @@ def dvis_transform(data, s=1, c=0, l=[0], t=0, name="transform", meta=None, vis_
         compression="pkl",
     )
 
+def dvis_seq(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None, cm='default', fmt='seq', mi=None, ma=None):
+    data = convert_to_nd(data)
+    sub_format = None
+    if data.shape[-1] == 3: # T H W C
+        data = data.transpose(0,3,1,2)
+    if name is None:
+        import time
+        # unique name
+        name = str(time.time())
+            
+    if data.max() <= 255:
+        if (data.min() >= -1) and (data.min() < 0) and data.max() <= 1:
+            data = data * 0.5 + 0.5
+        if data.max() <= 1:
+            data = data * 255
+        data = data.astype(np.uint8)
+    else:
+        raise IOError("Image values cannot be interpreted")
+    send2server(data=data, data_format="seq", size=vs, color=c, layers=l, t=t, name=name, meta_data=meta, vis_conf=vis_conf, sub_format=sub_format)
+
+
 
 def _infer_format(data):
     if isinstance(data, (trimesh.Trimesh, trimesh.Scene)):
@@ -770,9 +794,10 @@ def _infer_format(data):
             # squeeze single dimensions
             if data.shape[0] == 1:
                 data = data[0]
-
-        if len(data.shape) == 4:
-            if data.shape[0] == 3 or data.shape[3] == 3:
+            elif data.shape[1] == 3 or data.shape[3] ==3:
+                    # assume image sequence
+                    fmt = "seq"
+            elif data.shape[0] == 3 or data.shape[3] == 3:
                 fmt = "voxels"
                 # fmt = "cwhl"
             else:
@@ -1006,6 +1031,8 @@ def dvis(
         dvis_cam_img(data, s, l, t, name)
     elif fmt == "cam":
         dvis_cam(data, name)
+    elif fmt == "seq":
+        dvis_seq(data, vs, c, l, t, name, meta, vis_conf, fmt=fmt, cm=kwargs.get("cm",'default'), mi=kwargs.get('mi'), ma=kwargs.get('ma'))
 
     elif fmt == "cmd":
         dvis_cmd(data)

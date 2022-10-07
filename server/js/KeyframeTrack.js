@@ -79,8 +79,12 @@ class KeyframeTrack {
 
     };
     getInterpolatedData(pframe) {
+        if (pframe in this.data) {
+            return this.data[pframe];
+        }
         var kf_l = 0;
         var kf_r = Math.max(...Object.keys(this.data));
+
         // no interpolation logic for now
         for (var kf in this.data) {
             if (kf <= pframe) {

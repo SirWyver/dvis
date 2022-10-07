@@ -1,8 +1,6 @@
 from turtle import color
-from importlib_metadata import unique_everseen
 import numpy as np
 import cv2
-import cmapy
 
 
 def str2cmap(cm: str):
