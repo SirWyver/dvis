@@ -406,7 +406,7 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
         pass
     data = convert_to_nd(data)
     sub_format = None
-    if len(data.shape) == 3 and data.shape[0] == 3:  # C,W,H
+    if len(data.shape) == 3 and data.shape[0] in [3,4]:  # C,W,H
         data = np.transpose(data, [1, 2, 0])
     if fmt == 'xyl':
         # label image
@@ -426,6 +426,12 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
         data = data.astype(np.uint8)
     else:
         raise IOError("Image values cannot be interpreted")
+    if data.shape[-1] == 4:
+        #rgba
+        data = data/255
+        alpha_mask = data[...,3:]
+        data[...,:3] = data[...,:3] * alpha_mask + (1.0 - c) * (1-alpha_mask)
+        data = (data[...,:3]*255).astype(np.uint8)
     send2server(data=data, data_format="img", size=vs, color=c, layers=l, t=t, name=name, meta_data=meta, vis_conf=vis_conf, sub_format=sub_format)
 
 
@@ -803,7 +809,7 @@ def _infer_format(data):
             else:
                 raise IOError("Data format %s not understood" % str(data.shape))
         elif len(data.shape) == 3:
-            if data.shape[0] == 3 or data.shape[2] ==3:
+            if (data.shape[0] == 3 or data.shape[2] ==3) or (data.shape[0] == 4 or data.shape[2] ==4):
                 # assume image for convenience
                 fmt = "img"
             else:
