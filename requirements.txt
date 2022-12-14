@@ -12,3 +12,6 @@ simple-websocket==0.2.0
 python-socketio==4.6.1
 eventlet
 fabric
+jinja2==3.0.2
+itsdangerous==2.0.1
+werkzeug==2.0.3
