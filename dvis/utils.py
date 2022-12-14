@@ -107,8 +107,13 @@ special_color_palette = (
 
 def visualize_range(cont_label, img_ijs=None, H=None, W=None, cm="jet", mi=None, ma=None):
     """
-    cont_label: (H, W) or (N,)
+    cont_label: (H, W) or (N,) or (H,W,1)
     """
+
+    if len(cont_label.shape) == 3 and cont_label.shape[-1] == 1:
+        # H W 1
+        cont_label = cont_label[...,0]
+
     if cm is None:
         # explicit no conversion
         if len(cont_label.shape) == 2:
@@ -144,8 +149,11 @@ def visualize_range(cont_label, img_ijs=None, H=None, W=None, cm="jet", mi=None,
 
 def visualize_label(label, img_ijs=None, H=None, W=None, cm="default"):
     """
-    label: (H, W) or (N,)
+    label: (H, W) or (N,) or (H,W,1)
     """
+    if len(label.shape) == 3 and label.shape[-1] == 1:
+        # H W 1
+        label = label[...,0]
     if cm is None:
         # explicit no conversion
         if len(label.shape) == 2:

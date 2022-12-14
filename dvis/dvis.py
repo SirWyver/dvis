@@ -751,7 +751,17 @@ def dvis_transform(data, s=1, c=0, l=[0], t=0, name="transform", meta=None, vis_
 def dvis_seq(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None, cm='default', fmt='seq', mi=None, ma=None):
     data = convert_to_nd(data)
     sub_format = None
-    if data.shape[-1] == 3: # T H W C
+    if len(data.shape)==3 or data.shape[-1] == 1:
+        sub_format = _resolve_sub_type(data)
+        # range or label sequence
+        if sub_format == 'xyl':
+            # label image
+            data = np.stack(visualize_label(data[i], cm=cm) for i in range(data.shape[0]))
+        elif sub_format == 'xyr':
+            # range image with 
+            # remap default to jet
+            data = np.stack(visualize_range(data[i], cm=("jet" if cm=='default' else cm), mi=mi, ma=ma) for i in range(data.shape[0]))
+    if data.shape[-1] in [3,4]: # T H W C
         data = data.transpose(0,3,1,2)
     if name is None:
         import time
@@ -766,6 +776,17 @@ def dvis_seq(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
         data = data.astype(np.uint8)
     else:
         raise IOError("Image values cannot be interpreted")
+
+    print(data.shape)
+    if data.shape[-1] == 4:
+        #rgba
+        data = data.transpose(0,2,3,1)
+        data = data/255
+        alpha_mask = data[...,3:]
+        data[...,:3] = data[...,:3] * alpha_mask + (1.0 - c) * (1-alpha_mask)
+        data = (data[...,:3]*255).astype(np.uint8)
+        data = data.transpose(0,3,1,2)
+        
     send2server(data=data, data_format="seq", size=vs, color=c, layers=l, t=t, name=name, meta_data=meta, vis_conf=vis_conf, sub_format=sub_format)
 
 
@@ -800,7 +821,7 @@ def _infer_format(data):
             # squeeze single dimensions
             if data.shape[0] == 1:
                 data = data[0]
-            elif data.shape[1] == 3 or data.shape[3] ==3:
+            elif (data.shape[1] == 3 or data.shape[3] ==3) or (data.shape[1] == 4 or data.shape[3] == 4) or (data.shape[1] == 1 or data.shape[3] ==1):
                     # assume image sequence
                     fmt = "seq"
             elif data.shape[0] == 3 or data.shape[3] == 3:
@@ -856,25 +877,29 @@ def _infer_format(data):
     # infer type of image
     if fmt == 'img' and not isinstance(data, str):
         if len(data.shape) == 2 or (data.shape[-1]==1):
-            if isinstance(data, np.ndarray):
-                if data.dtype in [np.float32, np.float64]:
-                    # range type
-                    fmt = 'xyr'
-                else:
-                    # label type
-                    fmt = 'xyl'
-            elif isinstance(data, torch.Tensor):
-                if data.dtype in [torch.float, torch.double]:
-                    # range type
-                    fmt = 'xyr'
-                else:
-                    # label type
-                    fmt = 'xyl'
-                            
-            
+            fmt = _resolve_sub_type(data)
 
     return data, fmt
 
+
+def _resolve_sub_type(data):
+    if isinstance(data, np.ndarray):
+        if data.dtype in [np.float32, np.float64]:
+            # range type
+            return 'xyr'
+        else:
+            # label type
+            return 'xyl'
+    elif isinstance(data, torch.Tensor):
+        if data.dtype in [torch.float, torch.double]:
+            # range type
+            return 'xyr'
+        else:
+            # label type
+            return 'xyl'
+    else:
+        raise IOError("Unknown instance type")
+    return 
 
 def dvis_cam(data, name="RenderCam"):
     """Adds a new camera
