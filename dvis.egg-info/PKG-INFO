@@ -1,12 +1,10 @@
 Metadata-Version: 2.1
 Name: dvis
-Version: 0.8.4.0
+Version: 0.8.5.9
 Summary: The best web-based visualizer
 Home-page: https://github.com/SirWyver/dvis
 Author: Norman Müller
 Author-email: norman.mueller@tum.de
-License: UNKNOWN
-Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
@@ -124,8 +122,6 @@ For an overview of available commands check out the [documentation](https://sirw
 | ,      | Previous frame          |
 | t      | Switch camera          |
 | [      | Download screenshot         |
-
-
 
 
 

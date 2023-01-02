@@ -27,11 +27,9 @@ def send2server(data, data_format, size, color, layers, t, name="", meta_data=No
 
     else:
         print("Sending group")
-    if data_format in ["hwc", "hist", "img", "seq"]:
+    if data_format in ["hwc",  "img", "seq"]:
         vis = visdom.Visdom(port=4999)
-        if data_format == "hist":
-            vis.histogram(data.flatten())
-        elif data_format == "seq":
+        if data_format == "seq":
             for img in data:
                 vis.image(img, opts=dict(store_history=True), win=name)
         else:
@@ -87,6 +85,11 @@ def send2server(data, data_format, size, color, layers, t, name="", meta_data=No
             },
         )
 
+
+def send_plotly(data, layout):
+    vis = visdom.Visdom(port=4999)
+    print(f"Sending plolty {data['type']}")
+    vis._send({"data": [data], "layout": layout})
 
 def send_payload2server(
     payload, data_format, size, color, layers, t, name="", meta_data=None, vis_conf=None, shape="v", compression="pkl"

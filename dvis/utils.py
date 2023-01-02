@@ -3,6 +3,12 @@ import numpy as np
 import cv2
 
 
+def rgb2hex(rgb):
+    if rgb.max()<1:
+        return '#%02x%02x%02x' % tuple(x for x in (255*rgb).astype(np.uint8))
+    return '#%02x%02x%02x' %  tuple(x for x in rgb)
+    
+
 def str2cmap(cm: str):
     return cv2.__dict__[f"COLORMAP_{cm.upper()}"]
 

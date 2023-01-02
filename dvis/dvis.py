@@ -20,9 +20,9 @@ from .dvis_client_old import (
     sendCamImage2server,
 )
 
-from .dvis_client import send2server, send_payload2server
+from .dvis_client import send2server, send_payload2server, send_plotly
 import trimesh
-from .utils import get_color, visualize_label, visualize_range, get_color_batched
+from .utils import get_color, visualize_label, visualize_range, get_color_batched, rgb2hex
 import json
 from PIL import Image, ImageFile
 import os
@@ -983,6 +983,49 @@ def dvis_cam_img(data, s=1, l=0, t=None, name="CamImg"):
     send_payload2server({"image": image, "cam_name": cam_name}, "cam_img", s, 0, l, t, name)
 
 
+def dvis_histogram(data, nbins=100, mi=None, ma=None, layout=None, name=None, c=0):
+    """ Histogram using plotyly
+
+    Args:
+        data (array): Unordnered data
+        nbins (int): Number of bins
+        mi (float): Minimum bin
+        ma (float): Maximum bin
+        layout (dict): Layout for plolty (https://plotly.com/python/reference/layout)
+    """
+
+    data = convert_to_nd(data)
+
+    converted_layout = _convert_to_plotly_layout(name=name,c=c)
+    
+    if layout is None:
+        layout = dict()
+    layout.update(converted_layout)
+    
+    data_payload = {
+        "type": "histogram",
+        "x" : data.flatten().tolist(),
+        "nbinsx": nbins,
+    }
+    xbins={}
+    if mi is not None:
+        xbins["start"] = mi
+    if ma is not None:
+        xbins["end"] = ma
+    data_payload["xbins"] = xbins
+
+    send_plotly(data=data_payload, layout=layout)
+
+def _convert_to_plotly_layout(name=None, c=0):
+    layout={}
+    if name is not None:
+        layout['title'] = {"text": name}
+    if c != 0:
+        layout['colorway']= [rgb2hex(get_color(c))]
+    return layout
+
+
+
 def dvis(
     data,
     fmt=None,
@@ -1086,7 +1129,7 @@ def dvis(
     elif fmt in ["img", 'xyl', 'xyr']:
         dvis_img(data, vs, c, l, t, name, meta, vis_conf, fmt=fmt, cm=kwargs.get("cm",'default'), mi=kwargs.get('mi'), ma=kwargs.get('ma'))
     elif fmt == "hist":
-        dvis_hist()
+        dvis_histogram(data, nbins=kwargs.get('nbins'), mi=kwargs.get('mi'), ma=kwargs.get('ma'), layout=kwargs.get("layout"), name=name, c=c)
     else:
         print("Format unknown")
     """
