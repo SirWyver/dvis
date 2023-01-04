@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="dvis",
-    version="0.8.6.0",
+    version="0.8.7.0",
     author="Norman Müller",
     author_email="norman.mueller@tum.de",
     url="https://github.com/SirWyver/dvis",
@@ -20,7 +20,8 @@ setuptools.setup(
     ],
     python_requires=">=3.6",
     entry_points={
-        "console_scripts": ["dvis=dvis.dvis_cli:dvis_cli"],
+        "console_scripts": ["dvis=dvis.dvis_cli:dvis_cli",
+        "dvis-server=dvis.dvis_cli:dvis_server_cli"],
     },
     install_requires=[
         "visdom",

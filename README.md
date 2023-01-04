@@ -31,7 +31,17 @@ python examples/...
 
 
 # News
-* 0.84.0: Label and range image support, auto-format for img
+
+* 0.8.7.0: CLI for server: To start the server, use run
+  ```
+  dvis-server [--no_visdom]
+  ```
+* 0.8.6.0: Histogram support using plotly
+  ```
+  dvis(array, "hist", mi=0.1,ma=0.8, nbins=10, name="Example histogram")
+  ```
+
+* 0.8.4.0: Label and range image support, auto-format for img
   ```
   dvis(label_img [fmt='xyl']) # visualizses img of labels
   dvis(depth_map [fmt='xyr', cm='jet']) # visualizes an image of continuous values using cv2 color map
@@ -40,7 +50,7 @@ python examples/...
 
 # 🚀 Getting started
 
-Install the `dvis` package:
+## 1. Install the `dvis` package:
 Via pypi:
 ```
 pip install dvis
@@ -51,13 +61,17 @@ git clone git@github.com:SirWyver/dvis.git
 cd dvis
 pip install .
 ```
-Install the 3d web server (it's the easiest to have a separate conda env for it)
+## 2. Install the web server
 ```
 cd server
 conda env create -f environment.yml
 conda activate dvis_server
 ```
-Start the 3d web server
+## 3. Start the web server
+```
+dvis-server
+```
+or manually
 ```
 cd server
 python server.py
