@@ -32,6 +32,8 @@ setuptools.setup(
         "simple-websocket==0.2.0",
         "python-socketio==4.6.1",
         "eventlet",
-        "fabric"
+        "fabric",
+        "matplotlib",
+        "opencv-python"
     ],
 )
