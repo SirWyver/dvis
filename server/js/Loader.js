@@ -13,7 +13,7 @@ import { GLTFLoader } from '../../examples/jsm/loaders/GLTFLoader.js';
 import { KMZLoader } from '../../examples/jsm/loaders/KMZLoader.js';
 import { MD2Loader } from '../../examples/jsm/loaders/MD2Loader.js';
 import { MTLLoader } from '../../examples/jsm/loaders/MTLLoader.js';
-import { OBJLoader } from '../../examples/jsm/loaders/OBJLoader.js';
+import { OBJLoader2 } from '../../examples/jsm/loaders/OBJLoader2.js';
 import { PLYLoader } from '../../examples/jsm/loaders/PLYLoader.js';
 import { STLLoader } from '../../examples/jsm/loaders/STLLoader.js';
 import { SVGLoader } from '../../examples/jsm/loaders/SVGLoader.js';
@@ -25,6 +25,19 @@ import { AddObjectCommand } from './commands/AddObjectCommand.js';
 import { SetSceneCommand } from './commands/SetSceneCommand.js';
 
 import { LoaderUtils } from './LoaderUtils.js';
+
+
+var setDoubleSide = function (obj) {
+	if (obj.material !== undefined) {
+		obj.material.side = THREE.DoubleSide;
+	}	
+	obj.traverse(function (child) {
+		if (child.material !== undefined) {
+			child.material.side = THREE.DoubleSide;
+	}
+	});
+	return obj
+};
 
 var Loader = function (editor) {
 
@@ -358,7 +371,11 @@ var Loader = function (editor) {
 
 					var contents = event.target.result;
 
-					var object = new OBJLoader().parse(contents);
+					var object = new OBJLoader2().parse(contents);
+					//object.material.side = THREE.DoubleSide;
+
+					object = setDoubleSide(object);
+
 					object.name = filename;
 
 					editor.execute(new AddObjectCommand(editor, object));
@@ -377,11 +394,13 @@ var Loader = function (editor) {
 					var geometry = new PLYLoader().parse(contents);
 					geometry.sourceType = "ply";
 					geometry.sourceFile = file.name;
+					geometry.computeVertexNormals();
 
 					var material = new THREE.MeshStandardMaterial();
-
+					material.side = THREE.DoubleSide;
 					var mesh = new THREE.Mesh(geometry, material);
 					mesh.name = filename;
+					geometry.normalsNeedUpdate = true;
 
 					editor.execute(new AddObjectCommand(editor, mesh));
 
@@ -604,7 +623,7 @@ var Loader = function (editor) {
 		if (zip.files['model.obj'] && zip.files['materials.mtl']) {
 
 			var materials = new MTLLoader().parse(zip.file('materials.mtl').asText());
-			var object = new OBJLoader().setMaterials(materials).parse(zip.file('model.obj').asText());
+			var object = new OBJLoader2().setMaterials(materials).parse(zip.file('model.obj').asText());
 			editor.execute(new AddObjectCommand(editor, object));
 
 		}

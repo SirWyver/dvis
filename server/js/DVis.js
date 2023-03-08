@@ -750,7 +750,6 @@ var DVisClear = function (reset_cam) {
 var setVisualConfigsSubElement = function (obj, vis_conf, is_mesh) {
     // set some defaults
     obj.castShadow = true;
-
     if (obj.material !== undefined) {
         obj.material.transparent = true;
         if (is_mesh) {
