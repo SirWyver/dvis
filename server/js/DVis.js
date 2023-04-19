@@ -7,6 +7,9 @@ import { Animator } from './Animator.js';
 import { setVisible } from './libs/ui.js';
 import { BufferGeometryUtils } from '../../examples/jsm/utils/BufferGeometryUtils.js'
 import SpriteText from './libs/three-spritetext.js';
+import { Line2 } from "../../examples/jsm/lines/Line2.js";
+import { LineMaterial } from "../../examples/jsm/lines/LineMaterial.js";
+import { LineGeometry } from "../../examples/jsm/lines/LineGeometry.js";
 
 function get_color(color_code) {
     var color_palette = [
@@ -56,14 +59,14 @@ function get_color(color_code) {
     if (color_code < 0) {
         color_palette = (
             [
-                [255, 5, 5],  // red
-                [5, 255, 5],  // green
-                [5, 5, 255],  // blue
-                [255, 255, 255],  // white
-                [0, 0, 0],  // black
-                [255, 155, 0],  // orange
-                [255, 255, 0],  // yellow
-                [155, 0, 255],  // purple
+                [255, 5, 5], // red
+                [5, 255, 5], // green
+                [5, 5, 255], // blue
+                [255, 255, 255], // white
+                [0, 0, 0], // black
+                [255, 155, 0], // orange
+                [255, 255, 0], // yellow
+                [155, 0, 255], // purple
             ]
         )
         color_code = -color_code - 1;
@@ -81,14 +84,18 @@ function _generate_voxel_mesh(data_arr, col_size, vox_size = 1, color = [0.3, 0.
     if (shape === 'v') {
         var geo = new THREE.BoxBufferGeometry(vox_size * 0.95, vox_size * 0.95, vox_size * 0.95);
         geo = geo.toNonIndexed();
-    }
-    else if (shape === 'b') {
+    } else if (shape === 'b') {
         var geo = new THREE.SphereGeometry(0.99 * vox_size / 2, 16, 16);
     }
 
     geo.computeBoundingBox();
 
-    var minX = 1000, minY = 1000, minZ = 1000, maxX = -1000, maxY = -1000, maxZ = -1000;
+    var minX = 1000,
+        minY = 1000,
+        minZ = 1000,
+        maxX = -1000,
+        maxY = -1000,
+        maxZ = -1000;
     var x, y, z;
     /*
     var nice_material = new THREE.MeshStandardMaterial({
@@ -125,12 +132,10 @@ function _generate_voxel_mesh(data_arr, col_size, vox_size = 1, color = [0.3, 0.
         if (col_size == 7) {
             inst_mesh.setColorAt(i, new THREE.Color(data_arr[i * col_size + 3], data_arr[i * col_size + 4], data_arr[i * col_size + 5]));
             inst_mesh.setVisibleAt(i, new THREE.Color(data_arr[i * col_size + 6], 1.0, 1.0));
-        }
-        else {
+        } else {
             if (col_size == 6) {
                 inst_mesh.setColorAt(i, new THREE.Color(data_arr[i * col_size + 3], data_arr[i * col_size + 4], data_arr[i * col_size + 5]));
-            }
-            else {
+            } else {
                 inst_mesh.setColorAt(i, new THREE.Color(color[0], color[1], color[2]));
             }
         }
@@ -156,8 +161,7 @@ var DVisUpdateMesh = function update_mesh(mesh) {
     for (let i = 0; i < mesh.instanceVisible.count; i++) {
         if (mesh.instanceVisible.getX(i) <= mesh.min_value) {
             mesh.setVisibleMaskAt(i, 0.0);
-        }
-        else {
+        } else {
             mesh.setVisibleMaskAt(i, 1.0);
         }
     }
@@ -194,6 +198,7 @@ function _generate_voxel_mesh2(data_arr, col_size, vox_size = 1, color = [0.3, 0
     var points = new THREE.Points(geometry, material);
     return points;
 }
+
 function _generate_text(text, position = [0, 0, 0], size = 1.0, color = [0.3, 0.3, 0.5]) {
     const ContainerText = new SpriteText(text, 8);
     ContainerText.color = new THREE.Color(color[0], color[1], color[2]); // "rbg(" + 200 + ',' + 0 + ',' + 0 + ')';
@@ -214,7 +219,7 @@ function _generate_inst_hbboxes(data_arr, col_size, color = [0.3, 0.2, 0.5, 1]) 
     var row_size = data_arr.length / col_size;
     var geo = new THREE.BoxBufferGeometry(1, 1, 1);
     var geo_arrow = new THREE.BoxBufferGeometry(0.1, 0.2, 0.1);
-    geo_arrow.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -(0.5 + 0.1), 0,))
+    geo_arrow.applyMatrix4(new THREE.Matrix4().makeTranslation(0, -(0.5 + 0.1), 0, ))
     var geo = BufferGeometryUtils.mergeBufferGeometries([geo, geo_arrow]);
     geo = geo.toNonIndexed();
     geo.computeBoundingBox();
@@ -238,8 +243,7 @@ function _generate_inst_hbboxes(data_arr, col_size, color = [0.3, 0.2, 0.5, 1]) 
             var color_code = data_arr[i * col_size + 7];
             var inst_color = get_color(color_code);
             inst_mesh.setColorAt(i, new THREE.Color(inst_color[0], inst_color[1], inst_color[2]));
-        }
-        else {
+        } else {
             inst_mesh.setColorAt(i, new THREE.Color(color[0], color[1], color[2]));
         }
         var trans_mat = (new THREE.Matrix4().makeTranslation(x, y, z)).multiply((new THREE.Matrix4().makeRotationZ(a)).multiply(new THREE.Matrix4().makeScale(w, l, h)));
@@ -268,17 +272,27 @@ function _generate_bbox(bbox, line_width, color) {
 function _generate_bbox_from_corners(corners, line_width, color) {
     var color = new THREE.Color(color[0], color[1], color[2]);
     var geometry = new THREE.Geometry();
-    var edges = [[0, 1], [0, 2], [1, 3], [2, 3], [0, 4], [4, 5], [4, 6], [5, 7], [6, 7], [1, 5], [2, 6], [3, 7]];
-    for (var j = 0; j < 12; j++) {
-        var index = edges[j][0];
-        geometry.vertices.push(new THREE.Vector3(corners[3 * index], corners[3 * index + 1], corners[3 * index + 2]));
-        index = edges[j][1];
-        geometry.vertices.push(new THREE.Vector3(corners[3 * index], corners[3 * index + 1], corners[3 * index + 2]));
+    //      3-------7
+    //     /       /
+    //    /       /
+    //   2-------6
+    //   |  1-------5
+    //   | /       /
+    //   |/       /
+    //   0-------4
+
+    const positions = [];
+    var line_geo = new LineGeometry();
+    var corner_order = [0, 2, 0, 1, 3, 1, 5, 7, 5, 4, 6, 4, 0, 2, 3, 7, 6, 2];
+    for (var i = 0; i < corner_order.length; i++) {
+        var j = corner_order[i]
+        positions.push(corners[3 * j], corners[3 * j + 1], corners[3 * j + 2]);
     }
+    var line_mat = new LineMaterial({ color: color, linewidth: line_width / 200 });
+    line_geo.setPositions(positions);
 
-    var line_mat = new THREE.LineBasicMaterial({ color: color, linewidth: line_width * 2 });
-    var line = new THREE.LineSegments(geometry, line_mat);
-
+    // var line = new THREE.LineSegments(geometry, line_mat);
+    var line = new Line2(line_geo, line_mat);
     return line;
 }
 
@@ -308,7 +322,7 @@ function _generate_transform(transform, line_width) {
 
     var transform_matrix = new THREE.Matrix4();
     transform_matrix.fromArray(transform)
-    //rot.scale(new THREE.Vector3(5, 5, 5));
+        //rot.scale(new THREE.Vector3(5, 5, 5));
     transform_mesh.applyMatrix4(transform_matrix.transpose());
     return transform_mesh;
 }
@@ -440,51 +454,42 @@ function generate_object(data, data_format, size = 1, color_code = 1, shape = 'v
     }
     if (data_format == 'xyzrgb') {
         return _generate_voxel_mesh(data_arr, 6, size, color, shape);
-    }
-    else if (data_format == 'xyz') {
+    } else if (data_format == 'xyz') {
         return _generate_voxel_mesh(data_arr, 3, size, color, shape);
-    }
-    else if (data_format == 'bbox') {
+    } else if (data_format == 'bbox') {
         return _generate_bbox(data_arr, size, color);
-    }
-    else if (data_format == 'corners') {
+    } else if (data_format == 'corners') {
         return _generate_bbox_from_corners(data_arr, size, color);
-    }
-    else if (data_format == 'transform') {
+    } else if (data_format == 'transform') {
         return _generate_transform(data_arr, size);
-    }
-    else if (data_format == 'line') {
+    } else if (data_format == 'line') {
         return _generate_line(data_arr, size, color);
-    }
-    else if (data_format == 'hbbox') {
+    } else if (data_format == 'hbbox') {
         return _generate_hbbox(data_arr, size, color, filled = false);
-    }
-    else if (data_format == 'hbboxes') {
+    } else if (data_format == 'hbboxes') {
         return _generate_inst_hbboxes(data_arr, 7, color)
-    }
-    else if (data_format == 'hbboxes_c') {
+    } else if (data_format == 'hbboxes_c') {
         return _generate_inst_hbboxes(data_arr, 8, color)
-    }
-    else if (data_format == 'arrow') {
+    } else if (data_format == 'arrow') {
         return _generate_arrow(data_arr, size, color);
-    }
-    else if (data_format == 'text') {
+    } else if (data_format == 'text') {
         console.log(data);
         return _generate_text(data.text, data.position, size, color)
-    }
-    else if (data_format == 'vec') {
+    } else if (data_format == 'vec') {
         return _generate_vecs(data_arr, size, color);
     }
 }
 
 
-var DVisAddMesh = function (data, compression, name, layers = [0], t = [0], meta_data = {}, vis_conf = null) {
+var DVisAddMesh = function(data, compression, name, layers = [0], t = [0], meta_data = {}, vis_conf = null) {
     var base64_data = data;
     if (compression == 'glb') {
         var loader = new GLTFLoader();
-        loader.load("data:text/plain;base64," + base64_data, function (gltf) {
+        loader.load("data:text/plain;base64," + base64_data, function(gltf) {
             console.log('gltf loaded');
-            gltf.scene.name = name; gltf.scene.meta_data = meta_data; gltf.scene.key_frames = t;
+            gltf.scene.name = name;
+            gltf.scene.meta_data = meta_data;
+            gltf.scene.key_frames = t;
             if (meta_data != null) {
                 gltf.scene.obj_path = meta_data.obj_path;
             }
@@ -494,17 +499,17 @@ var DVisAddMesh = function (data, compression, name, layers = [0], t = [0], meta
     }
     if (compression == 'obj') {
         var loader = new OBJLoader2();
-        loader.load("data:," + base64_data, function (obj) {
+        loader.load("data:," + base64_data, function(obj) {
             console.log('obj loaded');
-            obj.name = name; obj.meta_data = meta_data; obj.keyframes = t;
+            obj.name = name;
+            obj.meta_data = meta_data;
+            obj.keyframes = t;
             if (meta_data != null) {
                 obj.obj_path = meta_data.obj_path;
             }
             if (t == null) {
                 obj.visible = true;
-            }
-
-            else {
+            } else {
                 var current_keyframes = [];
                 for (var j = 0; j < editor.scene.current_cframes.length; j++) {
                     current_keyframes.push(editor.scene.key_frames[editor.scene.current_cframes[j]]);
@@ -529,7 +534,7 @@ var DVisAddMesh = function (data, compression, name, layers = [0], t = [0], meta
 
 
 
-var DVisCmd = function (cmd_data) {
+var DVisCmd = function(cmd_data) {
     switch (cmd_data['cmd']) {
         case 'screenshot':
 
@@ -585,8 +590,7 @@ function _generate_cam_img(image_str, cam_name, name, s = 1, trs = null) {
     if (cam === undefined) {
         DVisAddCamera(fov, aspect_ratio, 0.01, 10000, cam_name, trs)
         console.log("Camera created")
-    }
-    else {
+    } else {
         aspect_ratio = cam.aspect
         fov = cam.fov;
     }
@@ -622,7 +626,7 @@ function _generate_cam(fov, aspect_ratio, near, far, name, trs = null) {
 
 
 
-var DVisAddPayload = function (payload, data_format, size, color_code, name, layers = [0], t = null, meta_data = {}, vis_conf = null, shape = 'v') {
+var DVisAddPayload = function(payload, data_format, size, color_code, name, layers = [0], t = null, meta_data = {}, vis_conf = null, shape = 'v') {
     var payload_obj;
     switch (data_format) {
         case 'cam_img':
@@ -639,8 +643,7 @@ var DVisAddPayload = function (payload, data_format, size, color_code, name, lay
     payload_obj.keyframes = t;
     if (t == null) {
         payload_obj.visible = true;
-    }
-    else {
+    } else {
         var current_keyframes = [];
         for (var j = 0; j < editor.scene.current_cframes.length; j++) {
             current_keyframes.push(editor.scene.key_frames[editor.scene.current_cframes[j]]);
@@ -657,15 +660,14 @@ var DVisAddPayload = function (payload, data_format, size, color_code, name, lay
     editor.execute(new AddObjectCommand(editor, payload_obj, layers));
 }
 
-var DVisAddCameraImage = function (image_str, cam_name, name, t = [0], layers = [0], vs = 1) {
+var DVisAddCameraImage = function(image_str, cam_name, name, t = [0], layers = [0], vs = 1) {
     var cam = editor.scene.getObjectByName(cam_name);
     var aspect_ratio = 1.78;
     var fov = 50;
     if (cam === undefined) {
         DVisAddCamera(fov, aspect_ratio, 0.01, 10000, cam_name)
         console.log("Camera created")
-    }
-    else {
+    } else {
         aspect_ratio = cam.aspect
         fov = cam.fov;
     }
@@ -693,7 +695,7 @@ var DVisAddCameraImage = function (image_str, cam_name, name, t = [0], layers = 
     return mesh;
 }
 
-var DVisAddCamera = function (fov, aspect_ratio, near, far, name, trs_data = null) {
+var DVisAddCamera = function(fov, aspect_ratio, near, far, name, trs_data = null) {
     if (fov == null) {
         fov = 50.0;
     }
@@ -710,7 +712,7 @@ var DVisAddCamera = function (fov, aspect_ratio, near, far, name, trs_data = nul
 
 
 
-var DVisAdd = function (data, data_format, size, color_code, name, layers = [0], t = null, meta_data = {}, vis_conf = null, shape = 'v') {
+var DVisAdd = function(data, data_format, size, color_code, name, layers = [0], t = null, meta_data = {}, vis_conf = null, shape = 'v') {
     if (data_format == 'group')
         var mesh = new THREE.Group();
 
@@ -723,8 +725,7 @@ var DVisAdd = function (data, data_format, size, color_code, name, layers = [0],
     mesh.keyframes = t;
     if (t == null) {
         mesh.visible = true;
-    }
-    else {
+    } else {
         var current_keyframes = [];
         for (var j = 0; j < editor.scene.current_cframes.length; j++) {
             current_keyframes.push(editor.scene.key_frames[editor.scene.current_cframes[j]]);
@@ -741,13 +742,13 @@ var DVisAdd = function (data, data_format, size, color_code, name, layers = [0],
     editor.execute(new AddObjectCommand(editor, mesh, layers));
 
 }
-var DVisClear = function (reset_cam) {
+var DVisClear = function(reset_cam) {
     editor.clear(reset_cam);
     editor.signals.onClearAnimator.dispatch();
 }
 
 
-var setVisualConfigsSubElement = function (obj, vis_conf, is_mesh) {
+var setVisualConfigsSubElement = function(obj, vis_conf, is_mesh) {
     // set some defaults
     obj.castShadow = true;
     if (obj.material !== undefined) {
@@ -755,13 +756,11 @@ var setVisualConfigsSubElement = function (obj, vis_conf, is_mesh) {
         if (is_mesh) {
             // set mesh defaults
             obj.material.side = THREE.DoubleSide;
-        }
-        else {
+        } else {
             obj.material.side = THREE.DoubleSide;
         }
 
-    }
-    else {
+    } else {
 
     }
 
@@ -781,8 +780,7 @@ var setVisualConfigsSubElement = function (obj, vis_conf, is_mesh) {
                 obj.renderOrder = -1;
                 if (is_mesh) {
                     obj.material.opacity = 0.25;
-                }
-                else {
+                } else {
                     obj.material.opacity = 0.06;
                 }
                 obj.material.transparent = true;
@@ -801,16 +799,16 @@ var setVisualConfigsSubElement = function (obj, vis_conf, is_mesh) {
 
 };
 
-var setVisualConfigs = function (obj, vis_conf, is_mesh = false) {
+var setVisualConfigs = function(obj, vis_conf, is_mesh = false) {
     setVisualConfigsSubElement(obj, vis_conf, is_mesh);
-    obj.traverse(function (child) {
+    obj.traverse(function(child) {
         setVisualConfigsSubElement(child, vis_conf, is_mesh);
     });
     return obj
 };
 
 
-var DVisLoad = function (file_str) {
+var DVisLoad = function(file_str) {
     function FileListItem(a) {
         a = [].slice.call(Array.isArray(a) ? a : arguments)
         for (var c, b = c = a.length, d = !0; b-- && d;) d = a[b] instanceof File
