@@ -27,7 +27,7 @@ setuptools.setup(
         "visdom",
         "trimesh",
         "pillow",
-        "flask==1.1.2",
+        "flask==2.3.2",
         "flask_socketio==4.3.0",
         "simple-websocket==0.2.0",
         "python-socketio==4.6.1",
