@@ -84,7 +84,7 @@ def convert2std(data_np, fmt, bounds=None, c=0, cm=None):
                 "xyzrgb",
             )
     elif fmt == "xyzrgb":
-        if np.any(data_np[:, 3:6] > 1) and np.all(data_np[:, 3:6] == data_np[:, 3:6].astype(np.int)):
+        if np.any(data_np[:, 3:6] > 1) and np.all(data_np[:, 3:6] == data_np[:, 3:6].astype(int)):
             ## color as uint 8
             data_np[:, 3:6] /= 255
             return data_np, fmt
@@ -104,7 +104,7 @@ def convert2std(data_np, fmt, bounds=None, c=0, cm=None):
             bounds = np.min(data_np[:, :2], 0), np.max(data_np[:, :2], 0)
         if len(bounds) == 2:
             if isinstance(bounds[0], (int, float)):
-                bounds = np.zeros(2, dtype=np.int), np.array(bounds)
+                bounds = np.zeros(2, dtype=int), np.array(bounds)
             elif isinstance(bounds[0], (tuple, list)):
                 bounds = np.array(bounds[0]), np.array(bounds[1])
         img = np.zeros((*(bounds[1] - bounds[0]), 3))
@@ -388,7 +388,7 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
                 # remote path
                 from fabric import Connection
                 hostname, remote_path, suffix = fn.split(":")[0], fn.split(":")[1], fn.split('.')[-1]
-                fn =f"tmp.{suffix}" 
+                fn =f"tmp.{suffix}"
                 Connection(hostname).get(remote_path,fn)
                 data = np.array(Image.open(fn))
                 os.remove(fn)
@@ -410,14 +410,14 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
         data = np.transpose(data, [1, 2, 0])
     if fmt == 'xyl':
         # label image
-        data = visualize_label(data, cm=cm) 
+        data = visualize_label(data, cm=cm)
         sub_format = 'xyl'
     elif fmt == 'xyr':
-        # range image with 
+        # range image with
         # remap default to jet
         data = visualize_range(data, cm=("jet" if cm=='default' else cm), mi=mi, ma=ma)
         sub_format = 'xyr'
-            
+
     if data.max() <= 255:
         if (data.min() >= -1) and (data.min() < 0) and data.max() <= 1:
             data = data * 0.5 + 0.5
@@ -471,7 +471,7 @@ def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=Non
                 # xyz
                 fmt = "xyz"
             elif data.shape[1] == 4:
-                if np.abs(data[:,3].astype(np.int) -  data[:,3]).max()<1e-3:
+                if np.abs(data[:,3].astype(int) -  data[:,3]).max()<1e-3:
                     # xyzl
                     fmt = "xyzl"
                 else:
@@ -489,7 +489,7 @@ def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=Non
         data, fmt = np.concatenate([data[:, :3],range_colors, data[:,3:4]], 1), "xyzrgba"
 
     if fmt in ["xyzrgb", "xyzrgba"]:
-        if np.any(data[:, 3:6] > 1) and np.all(data[:, 3:6] == data[:, 3:6].astype(np.int)):
+        if np.any(data[:, 3:6] > 1) and np.all(data[:, 3:6] == data[:, 3:6].astype(int)):
             ## color as uint 8
             data = data.astype(np.float32)
             data[:, 3:6] /= 255
@@ -758,7 +758,7 @@ def dvis_seq(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
             # label image
             data = np.stack(visualize_label(data[i], cm=cm) for i in range(data.shape[0]))
         elif sub_format == 'xyr':
-            # range image with 
+            # range image with
             # remap default to jet
             data = np.stack(visualize_range(data[i], cm=("jet" if cm=='default' else cm), mi=mi, ma=ma) for i in range(data.shape[0]))
     if data.shape[-1] in [3,4]: # T H W C
@@ -767,7 +767,7 @@ def dvis_seq(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
         import time
         # unique name
         name = str(time.time())
-            
+
     if data.max() <= 255:
         if (data.min() >= -1) and (data.min() < 0) and data.max() <= 1:
             data = data * 0.5 + 0.5
@@ -786,7 +786,7 @@ def dvis_seq(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
         data[...,:3] = data[...,:3] * alpha_mask + (1.0 - c) * (1-alpha_mask)
         data = (data[...,:3]*255).astype(np.uint8)
         data = data.transpose(0,3,1,2)
-        
+
     send2server(data=data, data_format="seq", size=vs, color=c, layers=l, t=t, name=name, meta_data=meta, vis_conf=vis_conf, sub_format=sub_format)
 
 
@@ -899,7 +899,7 @@ def _resolve_sub_type(data):
             return 'xyl'
     else:
         raise IOError("Unknown instance type")
-    return 
+    return
 
 def dvis_cam(data, name="RenderCam"):
     """Adds a new camera
@@ -997,11 +997,11 @@ def dvis_histogram(data, nbins=100, mi=None, ma=None, layout=None, name=None, c=
     data = convert_to_nd(data)
 
     converted_layout = _convert_to_plotly_layout(name=name,c=c)
-    
+
     if layout is None:
         layout = dict()
     layout.update(converted_layout)
-    
+
     data_payload = {
         "type": "histogram",
         "x" : data.flatten().tolist(),

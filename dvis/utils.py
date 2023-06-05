@@ -6,7 +6,7 @@ def rgb2hex(rgb):
     if rgb.max()<1:
         return '#%02x%02x%02x' % tuple(x for x in (255*rgb).astype(np.uint8))
     return '#%02x%02x%02x' %  tuple(x for x in rgb)
-    
+
 
 def str2cmap(cm: str):
     return cv2.__dict__[f"COLORMAP_{cm.upper()}"]
@@ -29,7 +29,7 @@ def get_color_batched(col_vals, cm=None):
     colored_batch = np.zeros((len(col_vals), 3))
     if cm is None or cm == 'default':
         # use default color palette
-        col_vals = col_vals.astype(np.int32)
+        col_vals = col_vals.astype(int)
         unique_cvals = np.unique(col_vals)
         for uq_cval in unique_cvals:
             if uq_cval >= 0:
