@@ -6,7 +6,14 @@ Note:
 """
 import shutil
 import numpy as np
-import torch
+try:
+    import torch.Tensor, torch.float, torch.double
+except:
+    class Dummy():
+        Tensor = None
+        float = None
+        double = None
+    torch = Dummy()
 from .dvis_client_old import (
     sendMesh2server,
     send_clear,
@@ -369,8 +376,20 @@ def dvis_mesh_pc(data, vs=1, c=0, l=0, t=None, name=None, meta=None, ms=None, vi
         shape=shape,
     )
 
+def _image_size(img, s, is_bool=False):
+    if s!=1:
+        if isinstance(s, (int,float)):
+            if s < 10:
+                # rescaling
+                new_size = (int(img.height*s), int(img.width*s))
+            else:
+                new_size = (s, int(img.width/img.height*s))
+        else:
+            new_size = (int(s[0]), int(s[1]))
+        img = img.resize((new_size[1], new_size[0]), Image.Resampling.NEAREST if is_bool else Image.Resampling.LANCZOS)
+    return img
 
-def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None, cm='default', fmt='img', mi=None, ma=None):
+def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None, cm='default', fmt='img', mi=None, ma=None, s=1):
     if isinstance(data, (ImageFile.ImageFile)):
         data = np.array(data)
     if isinstance(data, str):
@@ -390,10 +409,12 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
                 hostname, remote_path, suffix = fn.split(":")[0], fn.split(":")[1], fn.split('.')[-1]
                 fn =f"tmp.{suffix}"
                 Connection(hostname).get(remote_path,fn)
-                data = np.array(Image.open(fn))
+                img = Image.open(fn)
+                data = np.array(_image_size(img))
                 os.remove(fn)
             else:
-                data = np.array(Image.open(fn))
+                img = Image.open(fn)
+                data = np.array(_image_size(img))
         if meta is None:
             meta = {}
         meta["obj_path"] = fn
@@ -404,6 +425,7 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
             data = np.array(matplot2PIL(data))
     except:
         pass
+    is_bool = data.dtype == bool
     data = convert_to_nd(data)
     sub_format = None
     if len(data.shape) == 3 and data.shape[0] in [3,4]:  # C,W,H
@@ -432,6 +454,13 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
         alpha_mask = data[...,3:]
         data[...,:3] = data[...,:3] * alpha_mask + (1.0 - c) * (1-alpha_mask)
         data = (data[...,:3]*255).astype(np.uint8)
+    if s!=1:
+        img = Image.fromarray(data)
+        img = _image_size(img,s, is_bool=is_bool)
+        data = np.array(img)
+        if is_bool:
+            data = data.astype(np.uint8)
+
     send2server(data=data, data_format="img", size=vs, color=c, layers=l, t=t, name=name, meta_data=meta, vis_conf=vis_conf, sub_format=sub_format)
 
 
@@ -1127,7 +1156,7 @@ def dvis(
     elif fmt == "group":
         dvis_group(name, meta)
     elif fmt in ["img", 'xyl', 'xyr']:
-        dvis_img(data, vs, c, l, t, name, meta, vis_conf, fmt=fmt, cm=kwargs.get("cm",'default'), mi=kwargs.get('mi'), ma=kwargs.get('ma'))
+        dvis_img(data, vs, c, l, t, name, meta, vis_conf, fmt=fmt, cm=kwargs.get("cm",'default'), mi=kwargs.get('mi'), ma=kwargs.get('ma'), s=s)
     elif fmt == "hist":
         dvis_histogram(data, nbins=kwargs.get('nbins'), mi=kwargs.get('mi'), ma=kwargs.get('ma'), layout=kwargs.get("layout"), name=name, c=c)
     else:
