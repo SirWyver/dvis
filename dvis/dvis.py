@@ -7,13 +7,13 @@ Note:
 import shutil
 import numpy as np
 try:
-    import torch.Tensor, torch.float, torch.double
+    from torch import Tensor as torch_tensor
+    from torch import float as torch_float
+    from torch import double as torch_double
 except:
-    class Dummy():
-        Tensor = None
-        float = None
-        double = None
-    torch = Dummy()
+    torch_tensor = None
+    torch_float = None
+    torch_double = None
 from .dvis_client_old import (
     sendMesh2server,
     send_clear,
@@ -52,7 +52,7 @@ def convert_to_nd(data):
         return data
     if type(data) == list:
         return np.array(data)
-    if type(data) == torch.Tensor:
+    if type(data) == torch_tensor:
         return data.data.cpu().numpy()
     try:
         import imageio
@@ -301,7 +301,7 @@ def dvis_inject(data, **kwargs):
 
 def dvis_obj_kf(data, t, name):
     # sending object keyframe state
-    if isinstance(data, (np.ndarray, torch.Tensor)):
+    if isinstance(data, (np.ndarray, torch_tensor)):
         trs = data
         visible = True
         obj_name = name
@@ -333,7 +333,7 @@ def dvis_text(data, vs=1, c=0, l=[0], t=0, name="text", meta=None, vis_conf=None
     else:
         pos = data
         text = name
-    if isinstance(pos, (np.ndarray, torch.Tensor)):
+    if isinstance(pos, (np.ndarray, torch_tensor)):
         pos = pos.tolist()
     send2server(
         data={"position": pos, "text": text},
@@ -472,7 +472,7 @@ def dvis_points(data, fmt="points", s=1, c=0, l=[0], t=None, name=None, meta=Non
     """Display points
 
     Args:
-        data (np.ndarray, torch.Tensor): point cloud data
+        data (np.ndarray, torch_tensor): point cloud data
         fmt (str): points, xyzrgb, xyz, xyzc, xyzr
     """
     if name is None:
@@ -534,7 +534,7 @@ def dvis_voxels(data, fmt="voxels", s=1, c=0, l=[0], t=None, name=None, meta=Non
     """Display voxels
 
     Args:
-        data (np.ndarray, torch.Tensor): voxel grid data
+        data (np.ndarray, torch_tensor): voxel grid data
         fmt (str): voxels, cwhl, whlc, whl
     """
     if name is None:
@@ -578,7 +578,7 @@ def dvis_box(data, fmt="box", s=1, c=0, l=[0], t=None, name=None, meta=None, ms=
     """Display boxed annotation
 
     Args:
-        data (np.ndarray, torch.Tensor): Nxk box data
+        data (np.ndarray, torch_tensor): Nxk box data
         fmt (str): box, bbox, hbboxes, hbboxes_c, corners
 
     Formats:
@@ -654,7 +654,7 @@ def dvis_mesh(data, c=0, l=0, t=None, name=None, meta=None, ms=None, vis_conf=No
 def dvis_vec(data, s=1, c=0, l=[0], t=0, name="vec", meta=None, vis_conf=None):
     """Display vector(s)
     Args:
-        data (tuple,list,torch.Tensor, np.ndarray): start_pos, end_pos of the vector(s)
+        data (tuple,list,torch_tensor, np.ndarray): start_pos, end_pos of the vector(s)
 
     For Nx3, start_pos is origin
     """
@@ -670,7 +670,7 @@ def dvis_vec(data, s=1, c=0, l=[0], t=0, name="vec", meta=None, vis_conf=None):
         else:
             start_pos, end_pos = data
             start_pos, end_pos = np.expand_dims(start_pos, 0), np.expand_dims(end_pos, 0)
-    elif isinstance(data, (np.ndarray, torch.Tensor)):
+    elif isinstance(data, (np.ndarray, torch_tensor)):
         if len(data.shape) == 1:
             if data.shape[0] == 3:
                 end_pos = data[None, :]
@@ -682,9 +682,9 @@ def dvis_vec(data, s=1, c=0, l=[0], t=0, name="vec", meta=None, vis_conf=None):
             else:
                 start_pos, end_pos = data[:, :3], data[:, 3:6]
 
-    if isinstance(end_pos, torch.Tensor):
+    if isinstance(end_pos, torch_tensor):
         end_pos = end_pos.cpu().numpy()
-    if isinstance(start_pos, torch.Tensor):
+    if isinstance(start_pos, torch_tensor):
         start_pos = start_pos.cpu().numpy()
     data = np.concatenate([start_pos, end_pos], 1)
     data_np = convert_to_nd(data)
@@ -705,7 +705,7 @@ def dvis_vec(data, s=1, c=0, l=[0], t=0, name="vec", meta=None, vis_conf=None):
 def dvis_line(data, s=1, c=0, l=[0], t=0, name="line", meta=None, vis_conf=None):
     """Display vector
     Args:
-        data (torch.Tensor, np.ndarray): Nx3 array of line vertices
+        data (torch_tensor, np.ndarray): Nx3 array of line vertices
     """
     if name is None:
         name = "line"
@@ -727,7 +727,7 @@ def dvis_line(data, s=1, c=0, l=[0], t=0, name="line", meta=None, vis_conf=None)
 def dvis_arrow(data, s=1, c=0, l=[0], t=0, name="arrow", meta=None, vis_conf=None):
     """Display arrow
     Args:
-        data (torch.Tensor, np.ndarray): 3x3 or 4x4 transformation matrix
+        data (torch_tensor, np.ndarray): 3x3 or 4x4 transformation matrix
     """
     if name is None:
         name = "arrow"
@@ -754,7 +754,7 @@ def dvis_arrow(data, s=1, c=0, l=[0], t=0, name="arrow", meta=None, vis_conf=Non
 def dvis_transform(data, s=1, c=0, l=[0], t=0, name="transform", meta=None, vis_conf=None):
     """Display transformation
     Args:
-        data (torch.Tensor, np.ndarray): 3x3 or 4x4 transformation matrix
+        data (torch_tensor, np.ndarray): 3x3 or 4x4 transformation matrix
     """
     if name is None:
         name = "transform"
@@ -919,8 +919,8 @@ def _resolve_sub_type(data):
         else:
             # label type
             return 'xyl'
-    elif isinstance(data, torch.Tensor):
-        if data.dtype in [torch.float, torch.double]:
+    elif isinstance(data, torch_tensor):
+        if data.dtype in [torch_float, torch_double]:
             # range type
             return 'xyr'
         else:

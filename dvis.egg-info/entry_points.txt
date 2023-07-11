@@ -1,2 +1,0 @@
-[console_scripts]
-dvis = dvis.dvis_cli:dvis_cli
