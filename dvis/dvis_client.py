@@ -10,6 +10,17 @@ import gzip
 import base64
 
 
+PORT = 5001
+VIS_PORT = 4999
+
+def set_port(port):
+    global PORT
+    PORT = port
+
+def set_vis_port(port):
+    global VIS_PORT
+    VIS_PORT = port
+
 def encode_to_base64(x):
     if isinstance(x, str):
         return x
@@ -17,7 +28,6 @@ def encode_to_base64(x):
 
 
 def send2server(data, data_format, size, color, layers, t, name="", meta_data=None, vis_conf=None, shape="v", compression="gzip", sub_format=None):
-    port = 5001
     if data is not None:
         if isinstance(data, np.ndarray):
             if sub_format is None:
@@ -28,7 +38,7 @@ def send2server(data, data_format, size, color, layers, t, name="", meta_data=No
     else:
         print("Sending group")
     if data_format in ["hwc",  "img", "seq"]:
-        vis = visdom.Visdom(port=4999)
+        vis = visdom.Visdom(port=VIS_PORT)
         if data_format == "seq":
             for img in data:
                 vis.image(img, opts=dict(store_history=True), win=name)
@@ -39,7 +49,7 @@ def send2server(data, data_format, size, color, layers, t, name="", meta_data=No
                 data[np.all(data == 255, 2)] = np.array(color)
             vis.image(data.transpose(2, 0, 1), opts={"caption": name})
     elif data_format in ["gif"]:
-        vis = visdom.Visdom(port=4999)
+        vis = visdom.Visdom(port=VIS_PORT)
         vis.text(f'<img src="data:image/gif;base64,{data} ">', opts={"caption": name})
     else:
         if compression == "pkl":
@@ -69,7 +79,7 @@ def send2server(data, data_format, size, color, layers, t, name="", meta_data=No
         else:
             send_data = encode_to_base64(data)
         requests.post(
-            url=f"http://localhost:{port}/show",
+            url=f"http://localhost:{PORT}/show",
             json={
                 "data": send_data,
                 "compression": compression,
@@ -84,24 +94,24 @@ def send2server(data, data_format, size, color, layers, t, name="", meta_data=No
                 "shape": shape,
             },
         )
+        print(PORT)
 
 
 def send_plotly(data, layout):
-    vis = visdom.Visdom(port=4999)
+    vis = visdom.Visdom(port=VIS_PORT)
     print(f"Sending plolty {data['type']}")
     vis._send({"data": [data], "layout": layout})
 
 def send_payload2server(
     payload, data_format, size, color, layers, t, name="", meta_data=None, vis_conf=None, shape="v", compression="pkl"
 ):
-    port = 5001
     if data_format == "cam_img":
         payload["image"] = img_to_base64(payload["image"])
     if "trs" in payload:
         payload["trs"] = encode_to_base64(payload["trs"].astype(np.float32).copy(order="C"))
 
     requests.post(
-        url=f"http://localhost:{port}/show_payload",
+        url=f"http://localhost:{PORT}/show_payload",
         json={
             "payload": encode_to_base64(pickle.dumps(payload)),
             "compression": compression,
@@ -129,7 +139,7 @@ def img_to_base64(image):
     return img_str
 
 
-def sendCamImage2server(image_data, cam_name, layers, t, name, vs=1, port=5001):
+def sendCamImage2server(image_data, cam_name, layers, t, name, vs=1):
     if isinstance(image_data, (ImageFile.ImageFile, Image.Image)):
         image = image_data
     elif isinstance(image_data, np.ndarray):
@@ -145,44 +155,44 @@ def sendCamImage2server(image_data, cam_name, layers, t, name, vs=1, port=5001):
         "layers": layers,
         "vs": vs,
     }
-    requests.post(url=f"http://localhost:{port}/cam_image", json=cam_image)
+    requests.post(url=f"http://localhost:{PORT}/cam_image", json=cam_image)
     print(f"Sending cam image for cam {cam_name} at {t}")
 
 
-def send_config(config, port=5001):
-    requests.post(url=f"http://localhost:{port}/config", json=config)
+def send_config(config):
+    requests.post(url=f"http://localhost:{PORT}/config", json=config)
 
 
-def send_camera(cam_data, port=5001):
+def send_camera(cam_data):
     cam_data["trs"] = codecs.encode(pickle.dumps(cam_data["trs"]), "base64").decode()
-    requests.post(url=f"http://localhost:{port}/add_camera", json=cam_data)
+    requests.post(url=f"http://localhost:{PORT}/add_camera", json=cam_data)
 
 
-def sendCmd2server(cmd_data, port=5001):
-    requests.post(url=f"http://localhost:{port}/send_cmd", json=cmd_data)
+def sendCmd2server(cmd_data):
+    requests.post(url=f"http://localhost:{PORT}/send_cmd", json=cmd_data)
 
 
-def sendInject2server(cmd_data, port=5001):
-    requests.post(url=f"http://localhost:{port}/inject", json=cmd_data)
+def sendInject2server(cmd_data):
+    requests.post(url=f"http://localhost:{PORT}/inject", json=cmd_data)
 
 
-def sendPose2server(pose_data, port=5001):
-    requests.post(url=f"http://localhost:{port}/send_pose", json=codecs.encode(pickle.dumps(pose_data), "base64").decode())
+def sendPose2server(pose_data):
+    requests.post(url=f"http://localhost:{PORT}/send_pose", json=codecs.encode(pickle.dumps(pose_data), "base64").decode())
 
 
-def send_objectKFState(object_kf_state, port=5001):
+def send_objectKFState(object_kf_state):
     object_kf_state["trs"] = codecs.encode(pickle.dumps(object_kf_state["trs"]), "base64").decode()
-    requests.post(url=f"http://localhost:{port}/send_object_kf_state", json=object_kf_state)
+    requests.post(url=f"http://localhost:{PORT}/send_object_kf_state", json=object_kf_state)
     print(f"Sending kf state for {object_kf_state['name']} at {object_kf_state['kf']}")
 
 
-def sendTrack2server(track_data, traj=None, from_json=True, vs=1, c=0, l=0, port=5001):
+def sendTrack2server(track_data, traj=None, from_json=True, vs=1, c=0, l=0):
 
     if isinstance(track_data, str):
-        requests.post(url=f"http://localhost:{port}/local_track", json={"fn": track_data, "traj": traj, "c": c, "l": l, "vs": vs})
+        requests.post(url=f"http://localhost:{PORT}/local_track", json={"fn": track_data, "traj": traj, "c": c, "l": l, "vs": vs})
     else:
         if from_json:
-            requests.post(url=f"http://localhost:{port}/track", json=track_data)
+            requests.post(url=f"http://localhost:{PORT}/track", json=track_data)
         else:
             track_dict = dict()
             track_dict["name"] = track_data.get("name")
@@ -195,14 +205,14 @@ def sendTrack2server(track_data, traj=None, from_json=True, vs=1, c=0, l=0, port
 
             track_dict = pickle.dumps(track_dict)
 
-            requests.post(url=f"http://localhost:{port}/track_dict", json=codecs.encode(track_dict, "base64").decode())
+            requests.post(url=f"http://localhost:{PORT}/track_dict", json=codecs.encode(track_dict, "base64").decode())
 
 
 def send_clear(reset_cam):
-    requests.post(url="http://localhost:5001/clear", json={"reset_cam": reset_cam})
+    requests.post(url=f"http://localhost:{PORT}/clear", json={"reset_cam": reset_cam})
 
 
-def sendMesh2server(tm, color, layers, t, add, name="", meta_data=None, compression="glb", port=5001, vis_conf=None):
+def sendMesh2server(tm, color, layers, t, add, name="", meta_data=None, compression="glb", vis_conf=None):
     if compression == "glb":
         data = tm.export(file_type="glb")
         data = codecs.encode(data, "base64").decode()
@@ -217,7 +227,7 @@ def sendMesh2server(tm, color, layers, t, add, name="", meta_data=None, compress
         print(f"Sending trimesh of {len(tm.vertices)} vertices and {len(tm.faces)} faces")
 
     requests.post(
-        url=f"http://localhost:{port}/showMesh",
+        url=f"http://localhost:{PORT}/showMesh",
         json={
             "data": data,
             "layers": layers,

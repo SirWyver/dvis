@@ -14,20 +14,10 @@ except:
     torch_tensor = None
     torch_float = None
     torch_double = None
-from .dvis_client_old import (
-    sendMesh2server,
-    send_clear,
-    send_config,
-    sendTrack2server,
-    send_camera,
-    sendCmd2server,
-    sendPose2server,
-    sendInject2server,
-    send_objectKFState,
-    sendCamImage2server,
-)
 
-from .dvis_client import send2server, send_payload2server, send_plotly
+from .dvis_client import send2server, send_payload2server
+from .dvis_client import send_plotly, sendMesh2server, send_clear, send_config, sendTrack2server, sendCmd2server,sendPose2server,sendInject2server, send_objectKFState, sendCamImage2server
+from .dvis_client import set_port, set_vis_port
 import trimesh
 from .utils import get_color, visualize_label, visualize_range, get_color_batched, rgb2hex
 import json
@@ -102,6 +92,7 @@ def convert2std(data_np, fmt, bounds=None, c=0, cm=None):
     elif fmt == "transform" or fmt == "arrow":
         if data_np.shape[0] == 3 and data_np.shape[1] == 3:
             fmtted = np.eye(4)
+
             fmtted[:3, :3] = data_np
 
             return fmtted, fmt
@@ -1056,7 +1047,7 @@ def _convert_to_plotly_layout(name=None, c=0):
 
 
 def dvis(
-    data,
+    data=None,
     fmt=None,
     s=1,
     vs=None,
@@ -1095,6 +1086,14 @@ def dvis(
         shape (str, optional): [description]. Defaults to "v".
 
     """
+    # direct config setting
+    if "port" in kwargs:
+        set_port(kwargs["port"])
+        return
+    if "vis_port" in kwargs:
+        set_vis_port(kwargs["vis_port"])
+        return
+    
     if isinstance(l, int):
         l = [l]
     if isinstance(t, int):
