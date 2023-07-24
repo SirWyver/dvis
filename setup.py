@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="dvis",
-    version="0.8.7.6",
+    version="0.8.8.0",
     author="Norman Müller",
     author_email="norman.mueller@tum.de",
     url="https://github.com/SirWyver/dvis",
@@ -24,16 +24,16 @@ setuptools.setup(
         "dvis-server=dvis.dvis_cli:dvis_server_cli"],
     },
     install_requires=[
-        "visdom",
-        "trimesh",
+        "flask>=2.3.2",
+        "flask_socketio>=5.3.4",
+        "numpy",
         "pillow",
-        "flask==1.1.2",
-        "flask_socketio==4.3.0",
-        "simple-websocket==0.2.0",
-        "python-socketio==4.6.1",
+        "trimesh",
+        "simple-websocket>=0.2.0",
+        "python-socketio>=4.6.1",
         "eventlet",
-        "fabric",
-        "matplotlib",
+        "jinja2>=3.0.2",
+        "werkzeug>=2.0.3",
         "opencv-python"
     ],
 )

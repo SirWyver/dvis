@@ -24,11 +24,12 @@ def dvis_server_cli():
 
     from subprocess import Popen
     # start dvis server:
-    dvis_server_cmd = f"cd server; conda run -n dvis_server python server.py --port {args.port}"
+    DVIS_ROOT = "."
+    dvis_server_cmd = f"cd {DVIS_ROOT}/server; python server.py --port {args.port}"
     commands = [dvis_server_cmd]
     print(f"DVIS server at: http://localhost:{args.port}")
     if not args.no_visdom:
-        visdom_cmd = f"conda run -n dvis_server visdom -p {args.visdom_port}"
+        visdom_cmd = f"visdom -p {args.visdom_port}"
         commands.append(visdom_cmd)
         print(f"Visdom server at: http://localhost:{args.visdom_port}")
     procs = [Popen(cmd, shell=True) for cmd in commands]
