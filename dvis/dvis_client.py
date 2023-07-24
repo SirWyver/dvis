@@ -94,7 +94,6 @@ def send2server(data, data_format, size, color, layers, t, name="", meta_data=No
                 "shape": shape,
             },
         )
-        print(PORT)
 
 
 def send_plotly(data, layout):
