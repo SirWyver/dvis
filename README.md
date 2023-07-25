@@ -31,6 +31,11 @@ python examples/...
 
 
 # News
+* 0.8.8.0: Bumped dependencies version, custom port support
+ ```
+ dvis(port=<PORT>) # set port the client is sending on
+ dvis(vis_port=<PORT>) # set the port for visdom
+ ```
 
 * 0.8.7.0: CLI for server: To start the server, use run
   ```
@@ -61,15 +66,10 @@ git clone git@github.com:SirWyver/dvis.git
 cd dvis
 pip install .
 ```
-## 2. Install the web server
+## 2. Start the web server
 ```
-cd server
-conda env create -f environment.yml
-conda activate dvis_server
-```
-## 3. Start the web server
-```
-dvis-server
+# From the dvis repository folder:
+dvis-server 
 ```
 or manually
 ```
