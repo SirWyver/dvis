@@ -50,7 +50,12 @@ def convert_to_nd(data):
             return np.array(data)
     except:
         pass
-    raise Exception("Data type not understood")
+    try:
+        data  = np.array(data)
+        print(f"Converted to np.ndarray: {data.shape}")
+        return data
+    except:
+        raise Exception("Data type not understood")
 
 
 def matplot2PIL(fig):

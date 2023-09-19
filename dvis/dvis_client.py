@@ -13,6 +13,8 @@ import base64
 PORT = 5001
 VIS_PORT = 4999
 
+visdom_instance = None
+
 def set_port(port):
     global PORT
     PORT = port
@@ -26,6 +28,12 @@ def encode_to_base64(x):
         return x
     return base64.b64encode(x).decode("utf8")
 
+def _get_visdom_instance():
+    global visdom_instance
+    if visdom_instance is None:
+        visdom_instance = visdom.Visdom(port=VIS_PORT)
+    return visdom_instance
+    
 
 def send2server(data, data_format, size, color, layers, t, name="", meta_data=None, vis_conf=None, shape="v", compression="gzip", sub_format=None):
     if data is not None:
@@ -38,7 +46,8 @@ def send2server(data, data_format, size, color, layers, t, name="", meta_data=No
     else:
         print("Sending group")
     if data_format in ["hwc",  "img", "seq"]:
-        vis = visdom.Visdom(port=VIS_PORT)
+        vis = _get_visdom_instance()
+        
         if data_format == "seq":
             for img in data:
                 vis.image(img, opts=dict(store_history=True), win=name)
@@ -49,7 +58,7 @@ def send2server(data, data_format, size, color, layers, t, name="", meta_data=No
                 data[np.all(data == 255, 2)] = np.array(color)
             vis.image(data.transpose(2, 0, 1), opts={"caption": name})
     elif data_format in ["gif"]:
-        vis = visdom.Visdom(port=VIS_PORT)
+        vis = _get_visdom_instance()
         vis.text(f'<img src="data:image/gif;base64,{data} ">', opts={"caption": name})
     else:
         if compression == "pkl":
@@ -97,7 +106,7 @@ def send2server(data, data_format, size, color, layers, t, name="", meta_data=No
 
 
 def send_plotly(data, layout):
-    vis = visdom.Visdom(port=VIS_PORT)
+    vis = _get_visdom_instance()
     print(f"Sending plolty {data['type']}")
     vis._send({"data": [data], "layout": layout})
 
