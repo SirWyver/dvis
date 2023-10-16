@@ -9,7 +9,7 @@ transforms3d
 flask>=2.3.2
 flask_socketio>=5.3.4
 numpy
-pillow
+pillow>=10.0.0
 trimesh
 simple-websocket>=0.2.0
 python-socketio>=4.6.1
