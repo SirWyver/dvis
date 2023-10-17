@@ -406,11 +406,11 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
                 fn =f"tmp.{suffix}"
                 Connection(hostname).get(remote_path,fn)
                 img = Image.open(fn)
-                data = np.array(_image_resize(img))
+                data = np.array(_image_resize(img,s=s))
                 os.remove(fn)
             else:
                 img = Image.open(fn)
-                data = np.array(_image_resize(img))
+                data = np.array(_image_resize(img,s=s))
         if meta is None:
             meta = {}
         meta["obj_path"] = fn
@@ -840,7 +840,8 @@ def _infer_format(data):
         or (hasattr(matplotlib, "figure") and isinstance(data, matplotlib.figure.Figure))
     ):
         fmt = "img"
-    elif isinstance(data, str):
+    elif isinstance(data, (Path, str)):
+        data = str(data)
         suffix = data.split(".")[-1]
         if suffix in ["jpeg", "jpg", "png", "gif"]:
             fmt = "img"
