@@ -67,7 +67,7 @@ def send2server(data, data_format, size, color, layers, t, name="", meta_data=No
             else:
                 data = pickle.dumps(data)
         elif compression == "gzip":
-            data = gzip.compress(data.astype(np.float32).copy(order="C"))
+            data = gzip.compress(data.astype(np.float32).copy(order="C"), mtime=0)
         elif compression in ["glb", "obj"]:  # meshes
             tm = data
             if compression == "glb":

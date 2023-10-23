@@ -866,7 +866,7 @@ def _infer_format(data):
                 # fmt = "cwhl"
             else:
                 raise IOError("Data format %s not understood" % str(data.shape))
-        elif len(data.shape) == 3:
+        if len(data.shape) == 3:
             if (data.shape[0] == 3 or data.shape[2] ==3) or (data.shape[0] == 4 or data.shape[2] ==4):
                 # assume image for convenience
                 fmt = "img"

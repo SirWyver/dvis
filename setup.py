@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="dvis",
-    version="0.9.0.1",
+    version="0.9.0.2",
     author="Norman Müller",
     author_email="norman.mueller@tum.de",
     url="https://github.com/SirWyver/dvis",
