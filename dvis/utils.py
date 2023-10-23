@@ -110,7 +110,7 @@ special_color_palette = (
 )
 
 
-def visualize_range(cont_label, img_ijs=None, H=None, W=None, cm="jet", mi=None, ma=None):
+def visualize_range(cont_label, img_ijs=None, H=None, W=None, cm="jet", mi=None, ma=None,verbose=True):
     """
     cont_label: (H, W) or (N,) or (H,W,1)
     """
@@ -131,7 +131,7 @@ def visualize_range(cont_label, img_ijs=None, H=None, W=None, cm="jet", mi=None,
     # convert invalid cont_label vals to 0
     x[np.isinf(x)] = 0
     x[np.isneginf(x)] = 0
-    use_auto_range = ((mi is None) or (ma is None))
+    use_auto_range = ((mi is None) and (ma is None))
     if mi is None:
         mi = np.min(x)  # get minimum cont_label
     if ma is None:
@@ -139,7 +139,8 @@ def visualize_range(cont_label, img_ijs=None, H=None, W=None, cm="jet", mi=None,
 
     if use_auto_range and (mi >= 0 and ma <= 1):
         mi, ma = 0.0, 1.0
-    print(f"Set range: {mi} - {ma}")
+    if verbose:
+        print(f"Set range: {mi} - {ma}")
     x = np.clip(x, mi, ma)
     x = (x - mi) / max(ma - mi, 1e-8)  # normalize to 0~1
     x = np.clip((255 * x).astype(np.uint8), 0, 255)

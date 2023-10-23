@@ -1,6 +1,10 @@
 import numpy as np
 from dvis import dvis
+from PIL import Image
 
+dvis(port=5010)
+dvis(vis_port=5011)
+dvis(Image.fromarray(np.random.randint(0,255,size=(300,200,3)).astype(np.uint8)))
 
 imgseq = np.random.rand(4,200,200,1)
 

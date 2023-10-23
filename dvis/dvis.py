@@ -50,7 +50,12 @@ def convert_to_nd(data):
             return np.array(data)
     except:
         pass
-    raise Exception("Data type not understood")
+    try:
+        data  = np.array(data)
+        print(f"Converted to np.ndarray: {data.shape}")
+        return data
+    except:
+        raise Exception("Data type not understood")
 
 
 def matplot2PIL(fig):
@@ -367,7 +372,7 @@ def dvis_mesh_pc(data, vs=1, c=0, l=0, t=None, name=None, meta=None, ms=None, vi
         shape=shape,
     )
 
-def _image_size(img, s, is_bool=False):
+def _image_resize(img, s, is_bool=False):
     if s!=1:
         if isinstance(s, (int,float)):
             if s < 10:
@@ -401,11 +406,11 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
                 fn =f"tmp.{suffix}"
                 Connection(hostname).get(remote_path,fn)
                 img = Image.open(fn)
-                data = np.array(_image_size(img))
+                data = np.array(_image_resize(img,s=s))
                 os.remove(fn)
             else:
                 img = Image.open(fn)
-                data = np.array(_image_size(img))
+                data = np.array(_image_resize(img,s=s))
         if meta is None:
             meta = {}
         meta["obj_path"] = fn
@@ -447,7 +452,7 @@ def dvis_img(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
         data = (data[...,:3]*255).astype(np.uint8)
     if s!=1:
         img = Image.fromarray(data)
-        img = _image_size(img,s, is_bool=is_bool)
+        img = _image_resize(img,s, is_bool=is_bool)
         data = np.array(img)
         if is_bool:
             data = data.astype(np.uint8)
@@ -768,7 +773,7 @@ def dvis_transform(data, s=1, c=0, l=[0], t=0, name="transform", meta=None, vis_
         compression="pkl",
     )
 
-def dvis_seq(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None, cm='default', fmt='seq', mi=None, ma=None):
+def dvis_seq(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None, cm='default', fmt='seq', mi=None, ma=None,s=1):
     data = convert_to_nd(data)
     sub_format = None
     if len(data.shape)==3 or data.shape[-1] == 1:
@@ -780,7 +785,7 @@ def dvis_seq(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
         elif sub_format == 'xyr':
             # range image with
             # remap default to jet
-            data = np.stack(visualize_range(data[i], cm=("jet" if cm=='default' else cm), mi=mi, ma=ma) for i in range(data.shape[0]))
+            data = np.stack(visualize_range(data[i], cm=("jet" if cm=='default' else cm), mi=mi, ma=ma,verbose=i==0) for i in range(data.shape[0]))
     if data.shape[-1] in [3,4]: # T H W C
         data = data.transpose(0,3,1,2)
     if name is None:
@@ -806,6 +811,17 @@ def dvis_seq(data, vs=1, c=0, l=[0], t=None, name=None, meta=None, vis_conf=None
         data[...,:3] = data[...,:3] * alpha_mask + (1.0 - c) * (1-alpha_mask)
         data = (data[...,:3]*255).astype(np.uint8)
         data = data.transpose(0,3,1,2)
+    
+    if s!=1:
+        is_bool = data.dtype == bool
+        resized_data = []
+        for img in data:
+            img = Image.fromarray(img.transpose(1,2,0))
+            img = _image_resize(img,s, is_bool=is_bool)
+            resized_data.append(np.array(img).transpose(2,0,1))
+        data = np.stack(resized_data)
+        if is_bool:
+            data = data.astype(np.uint8)
 
     send2server(data=data, data_format="seq", size=vs, color=c, layers=l, t=t, name=name, meta_data=meta, vis_conf=vis_conf, sub_format=sub_format)
 
@@ -824,7 +840,8 @@ def _infer_format(data):
         or (hasattr(matplotlib, "figure") and isinstance(data, matplotlib.figure.Figure))
     ):
         fmt = "img"
-    elif isinstance(data, str):
+    elif isinstance(data, (Path, str)):
+        data = str(data)
         suffix = data.split(".")[-1]
         if suffix in ["jpeg", "jpg", "png", "gif"]:
             fmt = "img"
@@ -849,7 +866,7 @@ def _infer_format(data):
                 # fmt = "cwhl"
             else:
                 raise IOError("Data format %s not understood" % str(data.shape))
-        elif len(data.shape) == 3:
+        if len(data.shape) == 3:
             if (data.shape[0] == 3 or data.shape[2] ==3) or (data.shape[0] == 4 or data.shape[2] ==4):
                 # assume image for convenience
                 fmt = "img"
@@ -1134,7 +1151,7 @@ def dvis(
     elif fmt == "cam":
         dvis_cam(data, name)
     elif fmt == "seq":
-        dvis_seq(data, vs, c, l, t, name, meta, vis_conf, fmt=fmt, cm=kwargs.get("cm",'default'), mi=kwargs.get('mi'), ma=kwargs.get('ma'))
+        dvis_seq(data, vs, c, l, t, name, meta, vis_conf, fmt=fmt, cm=kwargs.get("cm",'default'), mi=kwargs.get('mi'), ma=kwargs.get('ma'),s=s)
 
     elif fmt == "cmd":
         dvis_cmd(data)
