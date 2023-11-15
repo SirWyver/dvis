@@ -134,6 +134,10 @@ def send_payload2server(
             "shape": shape,
         },
     )
+def send_visdom_command(cmd):
+    vis = _get_visdom_instance()
+    if cmd == "close":
+        vis.close()
 
 
 def img_to_base64(image):

@@ -1,0 +1,4 @@
+[console_scripts]
+dvis = dvis.dvis_cli:dvis_cli
+dvis-server = dvis.dvis_cli:dvis_server_cli
+

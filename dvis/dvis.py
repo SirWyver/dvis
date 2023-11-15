@@ -15,7 +15,7 @@ except:
     torch_float = None
     torch_double = None
 
-from .dvis_client import send2server, send_payload2server
+from .dvis_client import send2server, send_payload2server, send_visdom_command
 from .dvis_client import send_plotly, sendMesh2server, send_clear, send_config, sendTrack2server, sendCmd2server,sendPose2server,sendInject2server, send_objectKFState, sendCamImage2server
 from .dvis_client import set_port, set_vis_port
 import trimesh
@@ -1109,6 +1109,10 @@ def dvis(
         return
     if "vis_port" in kwargs:
         set_vis_port(kwargs["vis_port"])
+        return
+    # special commands
+    if isinstance(data, str) and data in ["clear", "clean", "close"]:
+        send_visdom_command("close")
         return
     
     if isinstance(l, int):
